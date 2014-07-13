@@ -48,13 +48,13 @@ var captrueInterface = function( config ) {
 
                     if( status === 'success') {
 
-                        console.log(config.title + ':' + key + '接口数据抓取成功');
+                        console.log(JSON.stringify({index : config.index, msg : key + '.json interface suceess capture!'}));
 
                         var content = page.evaluate(function () {
                             return document.body.innerHTML;
                         });
 
-                        fs.write(dirPath + config.title + '/' + key + '.txt', content, {
+                        fs.write(dirPath + config.title + '/' + key + '.json', content, {
                             mode: 'w'
                         });
 
@@ -87,8 +87,11 @@ var captrueInterface = function( config ) {
     });
 };
 
+var mlist = JSON.parse(fs.read('mname.txt')), filmIndex = sys.args[1];
 
-page.open(url + sys.args[1], function(status) {
+console.log(mlist[filmIndex]);
+
+page.open(url + mlist[filmIndex], function(status) {
 
     if( status === 'success') {
         var keyword = page.evaluate(function () {
@@ -105,6 +108,7 @@ page.open(url + sys.args[1], function(status) {
         // 生成接口文件
         captrueInterface({
             title : keyword,
+			index : filmIndex,
             interfaces : [
                 {
                     "getRegion" : "Region/getRegion/"
@@ -118,11 +122,13 @@ page.open(url + sys.args[1], function(status) {
             ]
         });
     } else {
-        console.log('接口数据抓取失败');
+        console.log(JSON.stringify({msg : 'interface capture fail!'}));
         phantom.exit();
     }
 
 });
+
+
 
 
 
