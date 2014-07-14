@@ -19,6 +19,22 @@ var fs = require('fs');
 var spawn = require("child_process").spawn;
 var sys =  require('system');
 
+// 生成抓取日记
+var captureLoger = function( data, path){
+    var resList = [];
+    if( data.index == 0 ) {
+        resList.push(data);
+        fs.write(path, JSON.stringify(resList), {
+            mode: 'w'
+        });
+    } else {
+        resList = JSON.parse(fs.read(path));
+        fs.write(path, JSON.stringify(resList.concat( data )), {
+            mode: 'w'
+        });
+    }
+};
+
 //抓取接口文件
 var captrueInterface = function( config ) {
     var interfacePath = 'http://index.baidu.com/Interface/',
@@ -54,27 +70,54 @@ var captrueInterface = function( config ) {
                             return document.body.innerHTML;
                         });
 
-                        fs.write(dirPath + config.title + '/' + key + '.json', content, {
-                            mode: 'w'
-                        });
+                        var contentJson = JSON.parse( content );
 
-                        if( index === len - 1 ) {
+                        if( contentJson.data && contentJson.data.length ) {
+                            fs.write(dirPath + config.title + '/' + key + '.json', content, {
+                                mode: 'w'
+                            });
+
+                            if( index === len - 1 ) {
+                                captureLoger({
+                                    index : config.index,
+                                    title : config.title,
+                                    success : true
+                                }, 'loger.txt');
+
+                                phantom.exit();
+                            }
+
+                            index++;
+
+                            args.callee();
+
+                        } else {
+                            captureLoger({
+                                index : config.index,
+                                title : config.title,
+                                success : false
+                            }, 'loger.txt');
+
                             phantom.exit();
                         }
-
-                        index++;
-
-                        args.callee();
 
                     } else {
 
-                        if( index === len - 1 ) {
+                        captureLoger({
+                            index : config.index,
+                            title : config.title,
+                            success : false
+                        }, 'loger.txt');
+
+                        phantom.exit();
+
+                        /*if( index === len - 1 ) {
                             phantom.exit();
-                        }
+                        }*/
 
-                        index++;
+                        //index++;
 
-                        args.callee();
+                        //args.callee();
                     }
                 });
 
@@ -89,8 +132,7 @@ var captrueInterface = function( config ) {
 
 var mlist = JSON.parse(fs.read('mname.txt')), filmIndex = sys.args[1];
 
-console.log(mlist[filmIndex]);
-
+// 入口文件，开始抓取工作
 page.open(url + mlist[filmIndex], function(status) {
 
     if( status === 'success') {
@@ -103,26 +145,33 @@ page.open(url + mlist[filmIndex], function(status) {
         screenShot  = dirPath + keyword + '/baiduindex.png';     // 结果页截屏路径
 
         // 结果页截屏
-        page.render(screenShot);
+        //page.render(screenShot);
 
         // 生成接口文件
         captrueInterface({
             title : keyword,
 			index : filmIndex,
             interfaces : [
-                {
+                /*{
                     "getRegion" : "Region/getRegion/"
                 },
                 {
                     "getInterest" : "Interest/getInterest/"
-                },
+                },*/
                 {
                     "getSocial" : "Social/getSocial/"
                 }
             ]
         });
     } else {
-        console.log(JSON.stringify({msg : 'interface capture fail!'}));
+        console.log(JSON.stringify({index : filmIndex, msg : 'interface capture fail!'}));
+        captureLoger({
+            index : config.index,
+            title : mlist[filmIndex],
+            connect : false,
+            success : false
+        }, 'loger.txt');
+
         phantom.exit();
     }
 
