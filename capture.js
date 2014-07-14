@@ -166,8 +166,7 @@ page.open(url + mlist[filmIndex], function(status) {
     } else {
         console.log(JSON.stringify({index : filmIndex, msg : 'interface capture fail!'}));
         captureLoger({
-            index : config.index,
-            title : mlist[filmIndex],
+            index : filmIndex,
             connect : false,
             success : false
         }, 'loger.txt');
@@ -176,6 +175,15 @@ page.open(url + mlist[filmIndex], function(status) {
     }
 
 });
+
+setTimeout(function(){
+    captureLoger({
+        index : filmIndex,
+        connect : false,
+        success : false
+    }, 'loger.txt');
+    phantom.exit();
+}, 60 * 1000);
 
 
 

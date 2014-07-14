@@ -1,0 +1,10 @@
+{
+    "name": "baiduindex",
+    "version": "0.1.0",
+    "devDependencies": {
+        "urlencode": "*",
+        "nodegrass": "*",
+        "node-csv": "*",
+        "cheerio": "*"
+    }
+}

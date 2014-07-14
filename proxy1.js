@@ -30,7 +30,9 @@ var getproxy = function( callback ) {
 
                 lineTr.each(function (index) {
                     var ceils = $(this).find('td');
+                    if( index > 0 ) {
                         proxyList.push(ceils.eq(0).text() + ':' + ceils.eq(1).text());
+                    }
                 });
 
                 if (startIndex === 1) {
@@ -52,6 +54,8 @@ var getproxy = function( callback ) {
 
                 args.callee();
 
+            }).on('error', function(e) {
+                args.callee();
             });
         } else {
             console.log('done!!!');

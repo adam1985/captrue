@@ -1,12 +1,29 @@
+/**
+ * 使用命令
+ *  node index
+ *  node index repair
+ *  node index merge
+ *  node index 24
+ *
+ */
+
+var arguments = process.argv.splice(2),
+    excuteType = arguments[1],
+    targetProxy = arguments[0] || 1;
+
+    if( targetProxy == 'repair' || targetProxy == 'merge') {
+        excuteType = targetProxy;
+        targetProxy = 1;
+    }
+
 var sys = require('sys'),
     fs = require('fs'),
     exec = require('child_process').exec,
     urlencode = require('urlencode'),
     nodeCsv = require('node-csv'),
     cheerio = require('cheerio'),
-	iconv = require('iconv-lite'),
 	net = require('net'),
-    proxy = require('./proxy2'),
+    proxy = require('./proxy' + targetProxy),
     dirWalker = require('./dirWalker');
 
 var dirPath = './create/', mlist = [],  mnameIndex = 0, len = 0, proxyIp, proxyIps, usedIpIndex = 0, totalIplength = 0;
@@ -21,6 +38,10 @@ var startCapture = function(ip, success, fail){
 	client.on('error', function(e) {
 		fail();
 	});
+
+    /*setTimeout(function(){
+        fail();
+    }, 60 * 1000);*/
 };
 
 // 递归调用数据抓取
@@ -47,9 +68,14 @@ var excuteExec = function(){
 
                     exec(commandArray.join(' '), function (error, stdout, stderr) {
                         if (error !== null) {
-                            console.log('error: ' + error);
+                            console.log(proxyIp+':连接异常');
+                            usedIpIndex++;
+                            arg.callee();
                         } else {
-                            console.log('"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"成功抓取=>\r\n' + stdout);
+                            if( mlist[mnameIndex] ) {
+                                console.log('"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"成功抓取=>\r\n' + stdout);
+                            }
+
                         }
                         mnameIndex++;
                         usedIpIndex++;
@@ -72,6 +98,8 @@ var excuteExec = function(){
                     } else {
                         proxyIps = data;
                     }
+
+                    console.log( data );
 
                     eachCapture( proxyIps );
 
@@ -107,26 +135,23 @@ proxy.getproxy( function( data ){
 
     totalIplength = proxyIps.length;
 
-    var arguments = process.argv.splice(2),
-        excuteType = arguments[0];
-
    if( excuteType ==  'repair') { // 修复模式
          var mlistRes = fs.readFileSync('loger.txt');
          if( mlistRes ){
              var mlistArr = JSON.parse( mlistRes );
              if( mlistArr.length ){
+                 var totalList = fs.readFileSync('mname.txt').toString();
+                 if( totalList ) {
+                     totalList = JSON.parse( totalList );
+                 }
                  mlistArr.forEach( function(v){
                         if( !v.success ) {
-                            var nmane = v.title;
-                            if( v.connect === undefined ) {
-                                nmane = urlencode(v.title, 'gbk');
-                            }
+                            var nmane = totalList[v.index];
                             mlist.push(nmane);
                         }
                  });
 
                  len = mlist.length;
-                 createFile('mname.txt', JSON.stringify(mlist));
 
                  excuteExec();
 
@@ -155,11 +180,13 @@ proxy.getproxy( function( data ){
 
 
    } else { // 读取csv
+           if( excuteType && /\d+/.test( excuteType ) ) {
+               mnameIndex = parseInt( excuteType );
+           }
            nodeCsv.each('mname.csv').on('data', function(data) {
                if( data instanceof Array && data.length ) {
                    mlist.push(urlencode(data[0], 'gbk'));
                }
-
            }).on('end', function() {
                len = mlist.length;
                createFile('mname.txt', JSON.stringify(mlist));
