@@ -26,7 +26,7 @@ var sys = require('sys'),
     proxy = require('./proxy' + targetProxy),
     dirWalker = require('./dirWalker');
 
-var dirPath = './create/', mlist = [],  mnameIndex = 0, len = 0, proxyIp, proxyIps, usedIpIndex = 0, totalIplength = 0;
+var dirPath = './create/', phantom, mlist = [],  mnameIndex = 0, len = 0, proxyIp, proxyIps, usedIpIndex = 0, totalIplength = 0;
 
 // 测试代理ip是否连接正常
 var startCapture = function(ip, success, fail){
@@ -39,14 +39,44 @@ var startCapture = function(ip, success, fail){
 		fail();
 	});
 
-    /*setTimeout(function(){
-        fail();
-    }, 60 * 1000);*/
 };
 
+var createFile = function( path, content ) {
+    var isexists = fs.existsSync(path);
+    if(isexists) {
+        fs.unlinkSync(path);
+    }
+    fs.writeFileSync(path, content);
+
+};
+
+// 生成抓取日记
+var longerIndex = 0;
+var captureLoger = function( data, path){
+    var resList = [];
+    if( longerIndex == 0 ) {
+        resList.push(data);
+        createFile(path, JSON.stringify(resList));
+        longerIndex++;
+    } else {
+        resList = JSON.parse(fs.readFileSync(path));
+        fs.writeFileSync(path, JSON.stringify(resList.concat( data )));
+    }
+};
+
+var captureState = {};
 // 递归调用数据抓取
 var excuteExec = function(){
     var arg = arguments, mname = mlist[mnameIndex];
+        if( captureState[mnameIndex] === undefined){
+            captureState[mnameIndex] = 0;
+        } else {
+            captureState[mnameIndex]++;
+        }
+
+        if( phantom ) {
+            phantom.kill();
+        }
         if(mnameIndex < len && mname){
             var commandArray =['phantomjs'], eachCapture = function(proxyIps){
                 if( proxyIps ) {
@@ -66,27 +96,74 @@ var excuteExec = function(){
                     commandArray.push( 'capture.js' );
                     commandArray.push( mnameIndex );
 
-                    exec(commandArray.join(' '), function (error, stdout, stderr) {
+                    phantom = exec(commandArray.join(' '), {
+                        timeout : 60 * 1000
+                    }, function (error, stdout, stderr) {
                         if (error !== null) {
-                            console.log(proxyIp+':连接异常');
+                            console.log('[' + mnameIndex + ']'+proxyIp+':连接异常1');
                             usedIpIndex++;
                             arg.callee();
                         } else {
                             if( mlist[mnameIndex] ) {
-                                console.log('"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"成功抓取=>\r\n' + stdout);
+                                stdout = stdout.replace(/^\s+|\s+$/g, '');
+
+                                var result = {};
+
+                                try{
+                                    result = JSON.parse( stdout );
+                                }catch( e ){
+                                    console.log('[' + mnameIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取失败，重新抓取');
+                                    if( captureState[mnameIndex] < 3 ) {
+                                        usedIpIndex++;
+                                    } else {
+                                        captureLoger({
+                                            index : mnameIndex,
+                                            name : urlencode.decode(mlist[mnameIndex], 'gbk'),
+                                            success : false
+                                        }, dirPath + 'loger.txt');
+                                        mnameIndex++;
+                                    }
+                                    arg.callee();
+                                }
+
+                                if( result.success ) {
+                                    console.log('[' + mnameIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取成功');
+
+                                    mnameIndex++;
+
+                                    arg.callee();
+
+                                } else {
+                                    console.log('[' + mnameIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取失败，重新抓取');
+                                    if( captureState[mnameIndex] < 3 ) {
+                                        usedIpIndex++;
+                                    } else {
+                                        captureLoger({
+                                            index : mnameIndex,
+                                            name : urlencode.decode(mlist[mnameIndex], 'gbk'),
+                                            success : false
+                                        }, dirPath + 'loger.txt');
+                                        mnameIndex++;
+                                    }
+
+                                    arg.callee();
+
+                                }
+
                             }
 
                         }
-                        mnameIndex++;
-                        usedIpIndex++;
-                        arg.callee();
+
+
                     });
+
                 }, function(){
-                    console.log(proxyIp+':连接异常');
+                    console.log('[' + mnameIndex + ']'+proxyIp+':连接异常2');
                     usedIpIndex++;
                     arg.callee();
                 });
             };
+
 			if(usedIpIndex >= totalIplength){
 				usedIpIndex = 0;
                 proxy.getproxy( function( data ){
@@ -99,26 +176,16 @@ var excuteExec = function(){
                         proxyIps = data;
                     }
 
-                    console.log( data );
-
                     eachCapture( proxyIps );
 
                 });
 
 			}
             eachCapture( proxyIps );
-
         }
 };
 
-var createFile = function( path, content ) {
-	var isexists = fs.existsSync(path);
-	if(isexists) {
-		fs.unlinkSync(path);
-	}
-	fs.writeFileSync(path, content);
-	
-};
+
 
 console.log('start capture!!!');
 
@@ -196,10 +263,6 @@ proxy.getproxy( function( data ){
            });
    }
 });
-
-
-
-
 
 
 

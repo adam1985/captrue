@@ -1,5 +1,6 @@
 ﻿var time =  +new Date,
     dirPath = './create/',
+    filePath = dirPath + 'baiduindex.json',
     fileName,
     resultFile,
     screenShot;
@@ -18,6 +19,22 @@ var page = require('webpage').create();
 var fs = require('fs');
 var spawn = require("child_process").spawn;
 var sys =  require('system');
+
+function encode16(str){
+    var ret='';
+    for( var i=0,len = str.length; i < len; i++ ){
+        ret += '\\u' + str.charCodeAt(i).toString(16);
+    }
+    return ret;
+}
+
+function decode16(str){
+    var ret = '';
+    for(var i=0, len = str.length; i < len; i++ ){
+        ret +=str.charAt(i);
+    }
+    return ret;
+}
 
 // 生成抓取日记
 var captureLoger = function( data, path){
@@ -64,26 +81,42 @@ var captrueInterface = function( config ) {
 
                     if( status === 'success') {
 
-                        console.log(JSON.stringify({index : config.index, msg : key + '.json interface suceess capture!'}));
-
                         var content = page.evaluate(function () {
                             return document.body.innerHTML;
                         });
 
-                        var contentJson = JSON.parse( content );
+                        var contentJson = {};
+
+                        try{
+                            contentJson = JSON.parse( content );
+                        } catch ( e ) {
+                            console.log(JSON.stringify({index : filmIndex,success : false, msg : 'interface capture fail!'}));
+
+                            page.close();
+                            phantom.exit();
+                        }
 
                         if( contentJson.data && contentJson.data.length ) {
-                            fs.write(dirPath + config.title + '/' + key + '.json', content, {
-                                mode: 'w'
-                            });
+
+                            if( config.index ==0) {
+                                fs.write(filePath, content, {
+                                    mode: 'w'
+                                });
+                            } else {
+                                var filmlistContent = fs.read(filePath);
+                                fs.write(filePath, filmlistContent + '\r\n' +  content, {
+                                    mode: 'w'
+                                });
+                            }
 
                             if( index === len - 1 ) {
-                                captureLoger({
-                                    index : config.index,
-                                    title : config.title,
-                                    success : true
-                                }, 'loger.txt');
 
+                                var filmName = contentJson.data[0].word || '';
+
+
+                                console.log(JSON.stringify({index : filmIndex, success : true,msg : key + '.json interface suceess capture!'}));
+
+                                page.close();
                                 phantom.exit();
                             }
 
@@ -92,32 +125,20 @@ var captrueInterface = function( config ) {
                             args.callee();
 
                         } else {
-                            captureLoger({
-                                index : config.index,
-                                title : config.title,
-                                success : false
-                            }, 'loger.txt');
 
+                            console.log(JSON.stringify({index : filmIndex, success : false,msg : 'interface capture fail!'}));
+
+                            page.close();
                             phantom.exit();
                         }
 
                     } else {
 
-                        captureLoger({
-                            index : config.index,
-                            title : config.title,
-                            success : false
-                        }, 'loger.txt');
+                        console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
 
+                        page.close();
                         phantom.exit();
 
-                        /*if( index === len - 1 ) {
-                            phantom.exit();
-                        }*/
-
-                        //index++;
-
-                        //args.callee();
                     }
                 });
 
@@ -130,58 +151,38 @@ var captrueInterface = function( config ) {
     });
 };
 
-var mlist = JSON.parse(fs.read('mname.txt')), filmIndex = sys.args[1];
+var mlist = JSON.parse(fs.read('mname.txt')),
+    filmIndex = sys.args[1];
 
 // 入口文件，开始抓取工作
 page.open(url + mlist[filmIndex], function(status) {
 
     if( status === 'success') {
-        var keyword = page.evaluate(function () {
-            return document.getElementById('schword').value;
-        });
-
-        child = spawn('mkdir', [dirPath + keyword]);
-
-        screenShot  = dirPath + keyword + '/baiduindex.png';     // 结果页截屏路径
-
-        // 结果页截屏
-        //page.render(screenShot);
 
         // 生成接口文件
         captrueInterface({
-            title : keyword,
+
 			index : filmIndex,
             interfaces : [
-                /*{
-                    "getRegion" : "Region/getRegion/"
-                },
-                {
-                    "getInterest" : "Interest/getInterest/"
-                },*/
                 {
                     "getSocial" : "Social/getSocial/"
                 }
             ]
         });
     } else {
-        console.log(JSON.stringify({index : filmIndex, msg : 'interface capture fail!'}));
-        captureLoger({
-            index : filmIndex,
-            connect : false,
-            success : false
-        }, 'loger.txt');
 
+        console.log(JSON.stringify({index : filmIndex, success : false,msg : 'interface capture fail!'}));
+
+        page.close();
         phantom.exit();
     }
 
 });
 
 setTimeout(function(){
-    captureLoger({
-        index : filmIndex,
-        connect : false,
-        success : false
-    }, 'loger.txt');
+    console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
+
+    page.close();
     phantom.exit();
 }, 60 * 1000);
 
