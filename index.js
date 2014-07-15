@@ -8,8 +8,16 @@
  */
 
 var arguments = process.argv.splice(2),
-    excuteType = arguments[1],
-    targetProxy = arguments[0] || 1;
+    targetProxy = arguments[0],
+    excuteType = arguments[1];
+
+    if( !targetProxy ) {
+        targetProxy = 1;
+    }
+
+    if( !excuteType ) {
+        excuteType = 0;
+    }
 
     if( targetProxy == 'repair' || targetProxy == 'merge') {
         excuteType = targetProxy;
@@ -54,7 +62,7 @@ var createFile = function( path, content ) {
 var longerIndex = 0;
 var captureLoger = function( data, path){
     var resList = [];
-    if( longerIndex == 0 ) {
+    if( longerIndex == 0 && excuteType == 0  ) {
         resList.push(data);
         createFile(path, JSON.stringify(resList));
         longerIndex++;
