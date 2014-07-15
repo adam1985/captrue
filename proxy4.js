@@ -3,7 +3,7 @@ var cheerio = require('cheerio'),
     ng = require('nodegrass');
 	
 	
-var startIndex = 1, pageSize = 100;
+var startIndex = 1, pageSize = 162;
 var createFile = function( path, content ) {
 	var isexists = fs.existsSync(path);
 	if(isexists) {
@@ -21,7 +21,7 @@ var getproxy = function( callback ) {
     (function () {
         var args = arguments;
         if (startIndex <= pageSize) {
-            ng.get('http://www.xici.net.co/qq/', function (data) {
+            ng.get('http://www.xici.net.co/nn/', function (data) {
 
                 $ = cheerio.load(data);
                 var table = $('#ip_list'),
