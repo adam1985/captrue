@@ -192,7 +192,10 @@ var excuteExec = function(){
                                         success : false
                                     }, dirPath + 'noneres.txt');
                                     mnameIndex++;
-                                } else {
+                                } if( result.block ) {
+                                    console.log('[' + mnameIndex + ']'+proxyIp+':代理ip被百度屏蔽!');
+                                    usedIpIndex++;
+                                }else {
                                     if( captureState[mnameIndex] < excuteSize ) {
                                         console.log('[' + mnameIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取失败，重新抓取');
                                         usedIpIndex++;
@@ -263,6 +266,7 @@ dateFormat.format();
 var now = new Date();
 var dateString = now.format("yyyyMMddhhmmss");
 spawn('cp', ["-r", dirPath, backupPath + dateString] );
+console.log('成功备份数据');
 
 console.log('start capture!!!');
 
@@ -278,6 +282,7 @@ proxy.getproxy( function( data ){
     }
 
     totalIplength = proxyIps.length;
+    console.log('一共抓取了' + totalIplength + '个代理ip');
 
    if( excuteType ==  'repair') { // 修复模式
          mnameIndex = parseInt( startIndex );

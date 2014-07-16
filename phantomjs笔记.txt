@@ -9,7 +9,7 @@ http://index.baidu.com/Interface/Interest/getInterest/?res=L24nLSRUQwE4e1UlMiQBd
 
 http://index.baidu.com/Interface/Social/getSocial/?res=L24nLSRUQwE4e1UlMiQBdApeciQ5F0FYRSN9NlQXYCMwWmghDhh8QlMlZBV1CGZ7RVNmMjcpVgoRUDkSIARPOG5gMUwIPxYlHQpXF0IkF3ZeCHEGXAEqHAQCLQQYCDIwIA8rCisjMQhTVWEwIQYSDUZjFSo2MUccF18UIkN6VUceMjwsOhEFKVpQAXRVVzElEF4UUSlNBzo5ZxZCN0ZCbSwvGUIpUmIBOWscd38Jdmd7BnEBa2BkWwIIOVAobwEVYTEWLQlAAyR8PgAWdFwCHFk1RD51cWVGPRsHMg%3D%3D&res2=93ruwPsc1SfLDd9PdbFlB4jLD7qnAzmpguq36OWYbtYd0PBJG0Jz831.351632.334789.093
 
-phantomjs --proxy=182.118.23.7:8081 capture.js 1
+phantomjs --proxy=222.87.129.30:80 capture.js 2936
 
 
 http://docs.casperjs.org/en/latest/modules/casper.html#onloaderror

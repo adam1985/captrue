@@ -21,7 +21,7 @@ var getproxy = function( callback ) {
     (function () {
         var args = arguments;
         if (startIndex <= pageSize) {
-            ng.get('http://www.xici.net.co/wt/' + startIndex, function (data) {
+            ng.get('http://www.xici.net.co/nn/' + startIndex, function (data) {
 
                 $ = cheerio.load(data);
                 var table = $('#ip_list'),

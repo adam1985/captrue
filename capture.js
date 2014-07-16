@@ -164,6 +164,7 @@ page.open(url + mlist[filmIndex], function(status) {
                 _isResult = true,
                 content = document.body.innerHTML,
                 length = document.querySelectorAll('#mainWrap').length;
+
             worlds.forEach(function(v){
                 if( content.indexOf(v) != -1 ) {
                     _isResult = false;
@@ -173,24 +174,36 @@ page.open(url + mlist[filmIndex], function(status) {
             return  _isResult && length > 0;
         });
 
+
+        var proxyBlock =  page.evaluate(function () {
+            return  document.querySelectorAll('#userbar').length == 0;
+        });
+
         //console.log( isResult );
 
-        if( isResult ) {
-            // 生成接口文件
-            captrueInterface({
-
-                index : filmIndex,
-                interfaces : [
-                    {
-                        "getSocial" : "Social/getSocial/"
-                    }
-                ]
-            });
-        } else {
-            console.log(JSON.stringify({index : filmIndex, noneres : true, success : false,msg : 'keyword none result!!!'}));
+        if( proxyBlock ) {
+            console.log(JSON.stringify({index : filmIndex, block : true, success : false, msg : 'proxy ip block!!!'}));
 
             page.close();
             phantom.exit();
+        } else {
+            if( isResult ) {
+                // 生成接口文件
+                captrueInterface({
+
+                    index : filmIndex,
+                    interfaces : [
+                        {
+                            "getSocial" : "Social/getSocial/"
+                        }
+                    ]
+                });
+            } else {
+                console.log(JSON.stringify({index : filmIndex, noneres : true, success : false,msg : 'keyword none result!!!'}));
+
+                page.close();
+                phantom.exit();
+            }
         }
 
     } else {
