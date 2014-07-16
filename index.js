@@ -1,40 +1,53 @@
 /**
  * 使用命令
- *  node index
- *  node index repair
- *  node index merge
- *  node index 24
- *
+ *  node index [proxy] [startIndex] [excuteType]
+ */
+
+/**
+ * 处理参数
+ * @type {Array}
  */
 
 var arguments = process.argv.splice(2),
-    targetProxy = arguments[0],
-    excuteType = arguments[1];
-
-    if( !targetProxy ) {
-        targetProxy = 1;
-    }
-
-    if( !excuteType ) {
-        excuteType = 0;
-    }
+    targetProxy = arguments[0] || 1,
+    startIndex = arguments[1] || 0,
+    excuteType = arguments[2];
 
     if( targetProxy == 'repair' || targetProxy == 'merge') {
         excuteType = targetProxy;
         targetProxy = 1;
     }
 
+    if( startIndex == 'repair' || startIndex == 'merge') {
+        excuteType = startIndex;
+        startIndex = 0;
+    }
+
+
 var sys = require('sys'),
     fs = require('fs'),
     exec = require('child_process').exec,
+    spawn = require('child_process').spawn,
     urlencode = require('urlencode'),
     nodeCsv = require('node-csv'),
     cheerio = require('cheerio'),
 	net = require('net'),
     proxy = require('./proxy' + targetProxy),
-    dirWalker = require('./dirWalker');
+    dirWalker = require('./dirWalker'),
+    dateFormat = require('./dateFormat');
 
-var dirPath = './create/', phantom, mlist = [],  mnameIndex = 0, len = 0, proxyIp, proxyIps, usedIpIndex = 0, totalIplength = 0;
+var dirPath = './create/',
+    backupPath = './backup/',
+    phantom,
+    mlist = [],
+    logerList = [],
+    mnameIndex = 0,
+    len = 0,
+    proxyIp,
+    proxyIps,
+    usedIpIndex = 0,
+    totalIplength = 0,
+    excuteSize = 3;
 
 // 测试代理ip是否连接正常
 var startCapture = function(ip, success, fail){
@@ -59,17 +72,39 @@ var createFile = function( path, content ) {
 };
 
 // 生成抓取日记
-var longerIndex = 0;
-var captureLoger = function( data, path){
+var longerIndex = 0, pathState = {};
+var captureLoger = function( data, path, type){
     var resList = [];
-    if( longerIndex == 0 && excuteType == 0  ) {
-        resList.push(data);
-        createFile(path, JSON.stringify(resList));
-        longerIndex++;
+    if( type == 'repair' ) {
+        var loggerStr = fs.readFileSync(path, 'utf8').toString();
+
+        if( loggerStr ){
+            loggerStr = loggerStr.replace(/^\s+|\s+$/g, '');
+            var loggers = JSON.parse( loggerStr );
+            if( loggers.length ) {
+                var copyLoggers = loggers.concat();
+                copyLoggers.forEach(function(v, i){
+                    if(i == data.index ){
+                        copyLoggers.splice(i, 1);
+                    }
+                });
+                fs.writeFileSync(path, JSON.stringify(copyLoggers));
+            }
+        }
     } else {
-        resList = JSON.parse(fs.readFileSync(path));
-        fs.writeFileSync(path, JSON.stringify(resList.concat( data )));
+        if( !pathState[path] && startIndex == 0  ) {
+            resList.push(data);
+            createFile(path, JSON.stringify(resList));
+            pathState[path] = 1;
+            longerIndex++;
+        } else {
+            if(fs.existsSync(path)) {
+                resList = JSON.parse(fs.readFileSync(path, 'utf8').toString());
+            }
+            fs.writeFileSync(path, JSON.stringify(resList.concat( data )));
+        }
     }
+
 };
 
 var captureState = {};
@@ -86,7 +121,7 @@ var excuteExec = function(){
             phantom.kill();
         }
         if(mnameIndex < len && mname){
-            var commandArray =['phantomjs'], eachCapture = function(proxyIps){
+            var commandArray =[], eachCapture = function(proxyIps){
                 if( proxyIps ) {
                     proxyIp = proxyIps[usedIpIndex];
                 }
@@ -95,6 +130,7 @@ var excuteExec = function(){
                     console.log(proxyIp+':连接正常');
                     if( proxyIp ){
                         commandArray.push( '--proxy=' + proxyIp );
+                        //commandArray.push( '--proxy-type=none' );
                     }
 
                     commandArray.push( '--output-encoding=gbk' );
@@ -104,75 +140,101 @@ var excuteExec = function(){
                     commandArray.push( 'capture.js' );
                     commandArray.push( mnameIndex );
 
-                    phantom = exec(commandArray.join(' '), {
+                    phantom = spawn('phantomjs', commandArray, {
                         timeout : 60 * 1000
-                    }, function (error, stdout, stderr) {
-                        if (error !== null) {
-                            console.log('[' + mnameIndex + ']'+proxyIp+':连接异常1');
-                            usedIpIndex++;
-                            arg.callee();
-                        } else {
-                            if( mlist[mnameIndex] ) {
-                                stdout = stdout.replace(/^\s+|\s+$/g, '');
+                    });
 
-                                var result = {};
+                    phantom.stdout.on('data', function (data) {
+                        if( mlist[mnameIndex] ) {
+                            data = data.toString();
+                            stdout = data.replace(/^\s+|\s+$/g, '');
 
-                                try{
-                                    result = JSON.parse( stdout );
-                                }catch( e ){
-                                    console.log('[' + mnameIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取失败，重新抓取');
-                                    if( captureState[mnameIndex] < 3 ) {
-                                        usedIpIndex++;
-                                    } else {
-                                        captureLoger({
-                                            index : mnameIndex,
-                                            name : urlencode.decode(mlist[mnameIndex], 'gbk'),
-                                            success : false
-                                        }, dirPath + 'loger.txt');
-                                        mnameIndex++;
-                                    }
-                                    arg.callee();
-                                }
+                            var result = {};
 
-                                if( result.success ) {
-                                    console.log('[' + mnameIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取成功');
-
-                                    mnameIndex++;
-
-                                    arg.callee();
-
+                            try{
+                                result = JSON.parse( stdout );
+                            }catch( e ){
+                                console.log('[' + mnameIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取失败，重新抓取');
+                                if( captureState[mnameIndex] < excuteSize ) {
+                                    usedIpIndex++;
                                 } else {
-                                    console.log('[' + mnameIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取失败，重新抓取');
-                                    if( captureState[mnameIndex] < 3 ) {
+                                    captureLoger({
+                                        index : mnameIndex,
+                                        name : urlencode.decode(mlist[mnameIndex], 'gbk'),
+                                        success : false
+                                    }, dirPath + 'loger.txt');
+                                    mnameIndex++;
+                                }
+                                arg.callee();
+                            }
+
+                            if( result.success ) {
+                                console.log('[' + mnameIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取成功');
+
+                                if( excuteType == 'repair') {
+                                    captureLoger({
+                                        index : mnameIndex
+                                    }, dirPath + 'loger.txt', 'repair');
+                                }
+
+
+                                mnameIndex++;
+
+                                arg.callee();
+
+                            } else {
+
+                                if( result.noneres ) {
+                                    console.log('[' + mnameIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"关键词未收录，没有结果!');
+                                    captureLoger({
+                                        index : mnameIndex,
+                                        name : urlencode.decode(mlist[mnameIndex], 'gbk'),
+                                        success : false
+                                    }, dirPath + 'noneres.txt');
+                                    mnameIndex++;
+                                } else {
+                                    if( captureState[mnameIndex] < excuteSize ) {
+                                        console.log('[' + mnameIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取失败，重新抓取');
                                         usedIpIndex++;
                                     } else {
+                                        console.log('[' + mnameIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取失败，记录日记');
                                         captureLoger({
                                             index : mnameIndex,
                                             name : urlencode.decode(mlist[mnameIndex], 'gbk'),
                                             success : false
-                                        }, dirPath + 'loger.txt');
+                                        }, dirPath + 'loger.txt' );
                                         mnameIndex++;
                                     }
-
-                                    arg.callee();
-
                                 }
-
+                                arg.callee();
                             }
 
                         }
+                    });
 
+                    phantom.stderr.on('data', function (data) {
+                        console.log('[' + mnameIndex + ']'+proxyIp+':网络连接超时!');
+                        usedIpIndex++;
+                        arg.callee();
+                    });
 
+                    phantom.on('close', function (code) {
+                        phantom.stdin.end();
                     });
 
                 }, function(){
-                    console.log('[' + mnameIndex + ']'+proxyIp+':连接异常2');
-                    usedIpIndex++;
+                    console.log('[' + mnameIndex + ']'+proxyIp+':网络连接异常');
+                    if( captureState[mnameIndex] < excuteSize ){
+                        usedIpIndex++;
+                    } else {
+                        mnameIndex++;
+                    }
+
                     arg.callee();
                 });
             };
 
-			if(usedIpIndex >= totalIplength){
+			if(usedIpIndex >= totalIplength - 1){
 				usedIpIndex = 0;
                 proxy.getproxy( function( data ){
                     if( !data || data.length === 0 ) {
@@ -188,12 +250,19 @@ var excuteExec = function(){
 
                 });
 
-			}
-            eachCapture( proxyIps );
+			} else {
+                eachCapture( proxyIps );
+            }
+
         }
 };
 
+//备份
 
+dateFormat.format();
+var now = new Date();
+var dateString = now.format("yyyyMMddhhmmss");
+spawn('cp', ["-r", dirPath, backupPath + dateString] );
 
 console.log('start capture!!!');
 
@@ -211,22 +280,22 @@ proxy.getproxy( function( data ){
     totalIplength = proxyIps.length;
 
    if( excuteType ==  'repair') { // 修复模式
-         var mlistRes = fs.readFileSync('loger.txt');
+         mnameIndex = parseInt( startIndex );
+         var mlistRes = fs.readFileSync(dirPath + 'loger.txt', 'utf8').toString();
          if( mlistRes ){
+             mlistRes = mlistRes.replace(/^\s+|\s+$/g, '');
              var mlistArr = JSON.parse( mlistRes );
+             logerList = mlistArr;
              if( mlistArr.length ){
-                 var totalList = fs.readFileSync('mname.txt').toString();
-                 if( totalList ) {
-                     totalList = JSON.parse( totalList );
-                 }
                  mlistArr.forEach( function(v){
                         if( !v.success ) {
-                            var nmane = totalList[v.index];
-                            mlist.push(nmane);
+                            mlist.push(urlencode(v.name, 'gbk'));
                         }
                  });
 
                  len = mlist.length;
+
+                 createFile('mname.txt', JSON.stringify(mlist));
 
                  excuteExec();
 
@@ -255,9 +324,7 @@ proxy.getproxy( function( data ){
 
 
    } else { // 读取csv
-           if( excuteType && /\d+/.test( excuteType ) ) {
-               mnameIndex = parseInt( excuteType );
-           }
+           mnameIndex = parseInt( startIndex );
            nodeCsv.each('mname.csv').on('data', function(data) {
                if( data instanceof Array && data.length ) {
                    mlist.push(urlencode(data[0], 'gbk'));

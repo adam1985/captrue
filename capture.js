@@ -159,16 +159,40 @@ page.open(url + mlist[filmIndex], function(status) {
 
     if( status === 'success') {
 
-        // 生成接口文件
-        captrueInterface({
-
-			index : filmIndex,
-            interfaces : [
-                {
-                    "getSocial" : "Social/getSocial/"
+        var isResult = page.evaluate(function () {
+            var worlds = ['立即购买', '未被收录'],
+                _isResult = true,
+                content = document.body.innerHTML,
+                length = document.querySelectorAll('#mainWrap').length;
+            worlds.forEach(function(v){
+                if( content.indexOf(v) != -1 ) {
+                    _isResult = false;
                 }
-            ]
+            });
+
+            return  _isResult && length > 0;
         });
+
+        //console.log( isResult );
+
+        if( isResult ) {
+            // 生成接口文件
+            captrueInterface({
+
+                index : filmIndex,
+                interfaces : [
+                    {
+                        "getSocial" : "Social/getSocial/"
+                    }
+                ]
+            });
+        } else {
+            console.log(JSON.stringify({index : filmIndex, noneres : true, success : false,msg : 'keyword none result!!!'}));
+
+            page.close();
+            phantom.exit();
+        }
+
     } else {
 
         console.log(JSON.stringify({index : filmIndex, success : false,msg : 'interface capture fail!'}));

@@ -21,7 +21,7 @@ var getproxy = function( callback ) {
     (function () {
         var args = arguments;
         if (startIndex <= pageSize) {
-            ng.get('http://www.xici.net.co/nn/', function (data) {
+            ng.get('http://www.xici.net.co/wt/' + startIndex, function (data) {
 
                 $ = cheerio.load(data);
                 var table = $('#ip_list'),
@@ -55,7 +55,7 @@ var getproxy = function( callback ) {
                 args.callee();
 
             }, {
-                "User-Agent" : "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:30.0) Gecko/20100101 Firefox/30.0"
+                "User-Agent" : "chrome"
             }).on('error', function(e) {
                 args.callee();
             });
