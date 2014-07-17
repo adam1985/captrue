@@ -46,7 +46,7 @@ var getproxy = function( callback ) {
                     }
                 }
 
-                totalProxyIps.concat(proxyList);
+                totalProxyIps =  totalProxyIps.concat(proxyList);
 
                 console.log('正在获取第' + startIndex + '页数据');
 

@@ -1,6 +1,6 @@
 ﻿var time =  +new Date,
     dirPath = './create/',
-    filePath = dirPath + 'baiduindex.json',
+    filePath = dirPath + 'baiduindex.txt',
     fileName,
     resultFile,
     screenShot;
@@ -221,6 +221,7 @@ setTimeout(function(){
 
     page.close();
     phantom.exit();
+
 }, 60 * 1000);
 
 

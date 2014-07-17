@@ -23,4 +23,28 @@ var format = function(){
     };
 };
 
+var formatSa = function( times ){
+    var second = 1000,
+        minute = second * 60,
+        hour = minute * 60,
+        day = hour * 24;
+
+    if( times < second ) {
+        return "1s"
+    } else if( times >= second && times <  minute) {
+        return parseInt(times / second ) + "秒";
+    } if( times >= minute && times < hour ) {
+        return parseInt(parseInt(times / minute) ) + "分" + parseInt(times % minute / second ) + "秒";
+    } if( times >= hour && times < day ) {
+        return parseInt(parseInt(times / hour) ) + "时" + parseInt(parseInt(times % hour / minute ) ) + "分" +
+            parseInt(times % hour % minute / second) + "秒";
+    } else if( times >= day ){
+        return parseInt(parseInt(times / day) ) + "天" +
+            parseInt(parseInt(times % day / hour) ) + "时" +
+            parseInt(parseInt(times % day % hour / minute ) ) + "分" +
+            parseInt(times % day % hour % minute / second) + "秒";
+    }
+};
+
 exports.format = format;
+exports.formatSa = formatSa;
