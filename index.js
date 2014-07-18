@@ -38,7 +38,7 @@ if( prevLoger.endIndex > 0) {
     if( prevLoger.endIndex >= prevLoger.length - 1 ){
         prevIndex = 0;
     } else {
-        prevIndex = prevLoger.endIndex;
+        prevIndex = prevLoger.endIndex + 1;
     }
 }
 
@@ -77,14 +77,19 @@ var phantom,
 
 // 测试代理ip是否连接正常
 var startCapture = function(ip, success, fail){
-	var ipArr = ip.split(":");
-	var client = net.createConnection(ipArr[1], ipArr[0]);
-	client.on('connect', function () {
-		success();
-	});
-	client.on('error', function(e) {
-		fail();
-	});
+    try{
+        var ipArr = ip.split(":");
+        var client = net.createConnection(ipArr[1], ipArr[0]);
+        client.on('connect', function () {
+            success();
+        });
+        client.on('error', function(e) {
+            fail();
+        });
+    } catch (e){
+        fail();
+    }
+
 
 };
 
@@ -385,29 +390,40 @@ var excuteExec = function(){
 			if(usedIpIndex >= totalIplength){
 				usedIpIndex = 0;
 
-                if( proxyIpIndex >= proxyIpArr.length ){
-                    proxyIpIndex = 0;
-                }
+                (function(){
 
-                var targetProxyVal = proxyIpArr[proxyIpIndex];
-
-                proxy = require('./proxy' + targetProxyVal);
-
-                proxyIpIndex++;
-
-                proxy.getproxy( function( data ){
-                    if( !data || data.length === 0 ) {
-                        var proxyIpStr = fs.readFileSync('ip.txt');
-                        if(proxyIpStr){
-                            proxyIps = JSON.parse(proxyIpStr);
-                        }
-                    } else {
-                        proxyIps = data;
+                    var _args = arguments;
+                    if( proxyIpIndex >= proxyIpArr.length ){
+                        proxyIpIndex = 0;
                     }
 
-                    eachCapture( proxyIps );
+                    var targetProxyVal = proxyIpArr[proxyIpIndex];
 
-                });
+                    proxy = require('./proxy' + targetProxyVal);
+
+                    proxyIpIndex++;
+
+                    proxy.getproxy( function( data ){
+                        if( !data || data.length === 0 ) {
+                            var proxyIpStr = fs.readFileSync('ip.txt');
+                            if(proxyIpStr){
+                                proxyIps = JSON.parse(proxyIpStr);
+                            }
+                        } else {
+                            proxyIps = data;
+                        }
+
+                        totalIplength = proxyIps.length;
+                        console.log('一共抓取了' + totalIplength + '个代理ip');
+
+                        if( totalIplength > 0 ) {
+                            eachCapture( proxyIps );
+                        } else {
+                            _args.callee();
+                        }
+                    });
+                }());
+
 
 			} else {
                 eachCapture( proxyIps );
