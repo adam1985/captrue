@@ -5,20 +5,24 @@
 
 var sys = require('sys'),
     fs = require('fs'),
-    exec = require('child_process').exec,
     spawn = require('child_process').spawn,
     urlencode = require('urlencode'),
     nodeCsv = require('node-csv'),
-    cheerio = require('cheerio'),
     net = require('net'),
-    dirWalker = require('./dirWalker'),
-    dateFormat = require('./dateFormat'),
-    info = require('./info');
-
+    iconv = require('iconv-lite'),
+    dirWalker = require('./module/dirWalker'),
+    dateFormat = require('./module/dateFormat'),
+    info = require('./module/info'),
+    base64 =  require('./module/base64.js'),
+    tools = require('./module/tools');
 
 var dirPath = './create/',
     backupPath = './backup/',
-    baiduindex = dirPath + 'baiduindex.txt';
+    failPath = dirPath + 'fail.txt',
+    noneresPath = dirPath + 'noneres.txt',
+    logerPath = dirPath + 'loger.txt',
+    baiduindexFile = dirPath + 'baiduindex.txt';
+
 
 /**
  * 处理参数
@@ -32,7 +36,7 @@ var getDefaultArg = function(arg, defaultArg) {
     return arg;
 };
 
-var prevLoger = info.getPrevLoger(dirPath + 'loger.txt'), prevIndex = 0;
+var prevLoger = info.getPrevLoger(logerPath), prevIndex = 0;
 
 if( prevLoger.endIndex > 0) {
     if( prevLoger.endIndex >= prevLoger.length - 1 ){
@@ -57,7 +61,7 @@ var arguments = process.argv.splice(2),
         startIndex = prevIndex;
     }
 
-var proxy = require('./proxy' + targetProxy);
+var proxy = require('./proxy/proxy' + targetProxy);
 
 var phantom,
     mlist = [],
@@ -90,7 +94,6 @@ var startCapture = function(ip, success, fail){
         fail();
     }
 
-
 };
 
 var createFile = function( path, content ) {
@@ -99,13 +102,12 @@ var createFile = function( path, content ) {
         fs.unlinkSync(path);
     }
     fs.writeFileSync(path, content);
-
 };
 
 //数组去重
 var unique = function (data, isDeep){
     data = data || [];
-    var a = {};
+    var a = {}, res = [];
     for (var i=0; i<data.length; i++) {
         var v;
         if( isDeep ) {
@@ -116,16 +118,16 @@ var unique = function (data, isDeep){
 
         if (typeof(a[v]) == 'undefined'){
             a[v] = 1;
+            res.push( v );
         }
     }
-    if( Object.keys ){
-        return Object.keys(a);
-    }
-    data.length=0;
-    for (var i in a){
-        data[data.length] = i;
-    }
-    return data;
+
+    return res;
+};
+
+
+var trim = function(str) {
+    return str.replace(/^\s+|\s+$/g, '');
 };
 
 
@@ -150,20 +152,59 @@ var defaultInfo = {
     average : 0
 };
 
-info.createLoger( dirPath + 'loger.txt', defaultInfo, true );
+info.createLoger( logerPath, defaultInfo, true );
 
 console.log('start capture!!!');
 
+// 生成百度指数数据
+var createBaiduIndex = function( data ){
+    var config = {
+        "1" : "19岁及以下20",
+        "2" : "20~29岁",
+        "3" : "30~39岁",
+        "4" : "40~49岁",
+        "5" : "50岁及以上",
+        "F" : "female",
+        "M" : "male",
+        "str_age" : "age",
+        "str_sex" : "sex"
+    };
+
+    if( data.length >>> 0 ) {
+        var result = [];
+        data.forEach(function(v){
+            var mname = v.word;
+            if( typeof v == 'object' ) {
+                tools.each(v, function(key1, val1){
+                    if( typeof val1 == 'object' ){
+                        tools.each( val1, function(key2, val2){
+                            result.push( mname + '\t' + config[key1] + ' ' + config[key2] + ' ' + val2 + ' ' + val2 + '\r\n');
+                        });
+                    }
+                });
+            }
+        });
+
+        if(fs.existsSync(baiduindexFile)) {
+            fs.appendFileSync(baiduindexFile, result.join(''));
+        } else {
+            createFile(baiduindexFile, result.join(''));
+        }
+
+    }
+
+};
+
 // 生成抓取日记
 var longerIndex = 0, pathState = {};
-var captureLoger = function( data, path, type, isSuccess){
+var captureLoger = function( data, path, isSuccess){
     var resList = [];
-    if( type == 'repair' ) {
+
         if( excuteType == 'repair') {
             var loggerStr = fs.readFileSync(path, 'utf8').toString();
 
             if( loggerStr ){
-                loggerStr = loggerStr.replace(/^\s+|\s+$/g, '');
+                loggerStr = trim( loggerStr );
                 var loggers = JSON.parse( loggerStr );
                 if( loggers.length ) {
                     var copyLoggers = loggers.concat();
@@ -175,20 +216,18 @@ var captureLoger = function( data, path, type, isSuccess){
                     fs.writeFileSync(path, JSON.stringify(copyLoggers));
                 }
             }
-        }
-    } else {
-        if( !pathState[path] && startIndex == 0  ) {
-            resList.push(data);
-            createFile(path, JSON.stringify(resList));
-            pathState[path] = 1;
-            longerIndex++;
-        } else {
-            if(fs.existsSync(path)) {
-                resList = JSON.parse(fs.readFileSync(path, 'utf8').toString());
+        } else if( !isSuccess ){
+            if( !pathState[path] && startIndex == 0  ) {
+                createFile(path, JSON.stringify(data));
+                pathState[path] = 1;
+            } else {
+                if(fs.existsSync(path)) {
+                    fs.appendFileSync(path, JSON.stringify(data) + '\r\n');
+                } else {
+                    createFile(path, JSON.stringify(data) + '\r\n');
+                }
             }
-            fs.writeFileSync(path, JSON.stringify(resList.concat( data )));
         }
-    }
 
     //记录统计
 
@@ -228,10 +267,10 @@ var captureLoger = function( data, path, type, isSuccess){
     defaultInfo.failNum = failNum;
     defaultInfo.noneresNum = noneresNum;
 
-    info.createLoger( dirPath + 'loger.txt', defaultInfo );
+    info.createLoger( logerPath, defaultInfo );
 
     if( !isSuccess ) {
-        console.log('[' + mnameIndex + '-' + usedIpIndex + ']' + '"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"错误日记已记录!');
+        console.log('[' + mnameIndex + '-' + usedIpIndex + ']' + '"' + mlist[mnameIndex] + '"错误日记已记录!');
     }
 
     mnameIndex++;
@@ -269,55 +308,63 @@ var excuteExec = function(){
                     //commandArray.push( '--script-encoding=gbk' );
 
                     commandArray.push( 'capture.js' );
-                    commandArray.push( mnameIndex );
+                    commandArray.push( mnameIndex, base64.encode( urlencode( mname , 'gbk'))  );
 
+                    //console.log( commandArray.join(' '));
                     phantom = spawn('phantomjs', commandArray, {
-                        timeout : 60 * 1000
+                        timeout : 30 * 1000
                     });
 
                     phantom.stdout.on('data', function (data) {
                         if( mlist[mnameIndex] ) {
                             data = data.toString();
-                            stdout = data.replace(/^\s+|\s+$/g, '');
+                            var stdout = trim( data );
+
 
                             var result = {};
 
                             try{
                                 result = JSON.parse( stdout );
                             }catch( e ){
-                                console.log('[' + mnameIndex + '-' + usedIpIndex + ']' + '"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取失败，重新抓取');
+                                console.log('[' + mnameIndex + '-' + usedIpIndex + ']' + '"' + mlist[mnameIndex] + '"抓取失败，重新抓取');
                                 if( captureState[mnameIndex] < excuteSize ) {
                                     usedIpIndex++;
                                 } else {
                                     captureLoger({
                                         index : mnameIndex,
-                                        name : urlencode.decode(mlist[mnameIndex], 'gbk'),
+                                        name : mlist[mnameIndex],
                                         success : false
-                                    }, dirPath + 'fail.txt');
+                                    }, failPath);
 
                                 }
                                 arg.callee();
                             }
 
                             if( result.success ) {
-                                console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取成功');
+                                console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+'"' + mlist[mnameIndex] + '"抓取成功');
+                                var content = JSON.parse( result.content );
+                                createBaiduIndex( content.data );
+                                if( result.complete ) {
 
-                                captureLoger({
-                                    index : mnameIndex
-                                }, dirPath + 'fail.txt', 'repair', result.success);
+                                    captureLoger({
+                                        index : mnameIndex,
+                                        name : mlist[mnameIndex],
+                                        success : true
+                                    }, failPath,  result.success);
 
+                                    arg.callee();
+                                }
 
-                                arg.callee();
 
                             } else {
 
                                 if( result.noneres ) {
-                                    console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"关键词未收录，没有结果!');
+                                    console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+'"' + mlist[mnameIndex] + '"关键词未收录，没有结果!');
                                     captureLoger({
                                         index : mnameIndex,
-                                        name : urlencode.decode(mlist[mnameIndex], 'gbk'),
+                                        name : mlist[mnameIndex],
                                         success : false
-                                    }, dirPath + 'noneres.txt');
+                                    }, noneresPath);
 
                                 } else if( result.block ) {
                                     console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+proxyIp+':代理ip被百度屏蔽!');
@@ -326,22 +373,22 @@ var excuteExec = function(){
                                     } else {
                                         captureLoger({
                                             index : mnameIndex,
-                                            name : urlencode.decode(mlist[mnameIndex], 'gbk'),
+                                            name : mlist[mnameIndex],
                                             success : false
-                                        }, dirPath + 'fail.txt' );
+                                        }, failPath );
 
                                     }
                                 }else {
                                     if( captureState[mnameIndex] < excuteSize ) {
-                                        console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取失败，重新抓取');
+                                        console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+'"' + mlist[mnameIndex] + '"抓取失败，重新抓取');
                                         usedIpIndex++;
                                     } else {
-                                        console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+'"' + urlencode.decode(mlist[mnameIndex], 'gbk') + '"抓取失败，记录日记');
+                                        console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+'"' + mlist[mnameIndex] + '"抓取失败，记录日记');
                                         captureLoger({
                                             index : mnameIndex,
-                                            name : urlencode.decode(mlist[mnameIndex], 'gbk'),
+                                            name : mlist[mnameIndex],
                                             success : false
-                                        }, dirPath + 'fail.txt' );
+                                        }, failPath );
 
                                     }
                                 }
@@ -358,9 +405,9 @@ var excuteExec = function(){
                         } else {
                             captureLoger({
                                 index : mnameIndex,
-                                name : urlencode.decode(mlist[mnameIndex], 'gbk'),
+                                name : mlist[mnameIndex],
                                 success : false
-                            }, dirPath + 'fail.txt' );
+                            }, failPath );
 
                         }
                         arg.callee();
@@ -377,9 +424,9 @@ var excuteExec = function(){
                     } else {
                         captureLoger({
                             index : mnameIndex,
-                            name : urlencode.decode(mlist[mnameIndex], 'gbk'),
+                            name : mlist[mnameIndex],
                             success : false
-                        }, dirPath + 'fail.txt' );
+                        }, failPath );
 
                     }
 
@@ -399,7 +446,7 @@ var excuteExec = function(){
 
                     var targetProxyVal = proxyIpArr[proxyIpIndex];
 
-                    proxy = require('./proxy' + targetProxyVal);
+                    proxy = require('./proxy/proxy' + targetProxyVal);
 
                     proxyIpIndex++;
 
@@ -448,9 +495,9 @@ proxy.getproxy( function( data ){
     console.log('一共抓取了' + totalIplength + '个代理ip');
 
    if( excuteType ==  'repair') { // 修复模式
-         var mlistRes = fs.readFileSync(dirPath + 'fail.txt', 'utf8').toString();
+         var mlistRes = fs.readFileSync(failPath, 'utf8').toString();
          if( mlistRes ){
-             mlistRes = mlistRes.replace(/^\s+|\s+$/g, '');
+             mlistRes = trim(mlistRes);
              var mlistArr = JSON.parse( mlistRes );
              logerList = mlistArr;
              if( mlistArr.length ){
@@ -470,8 +517,8 @@ proxy.getproxy( function( data ){
 
          }
    } else if( excuteType ==  'unique') {
-       if( fs.existsSync( baiduindex ) ) {
-            var baideindexStr = fs.readFileSync( baiduindex ).toString();
+       if( fs.existsSync( baiduindexFile ) ) {
+            var baideindexStr = fs.readFileSync( baiduindexFile ).toString();
            if( baideindexStr ){
                var baiduindexList = baideindexStr.split(/\r\n/);
                baiduindexList.forEach(function(v, i){
@@ -482,25 +529,25 @@ proxy.getproxy( function( data ){
 
                baiduindexList.forEach(function(v, i){
                    if( i > 0) {
-                       var baiduindexContent = fs.readFileSync( baiduindex );
+                       var baiduindexContent = fs.readFileSync( baiduindexFile );
                        baiduindexContent += JSON.stringify( v ) + '\r\n';
-                       fs.writeFileSync( baiduindex, baiduindexContent);
+                       fs.writeFileSync( baiduindexFile, baiduindexContent);
 
                    } else {
-                       fs.writeFileSync( baiduindex, JSON.stringify( v ));
+                       fs.writeFileSync( baiduindexFile, JSON.stringify( v ));
                    }
 
                });
 
            }
        } else {
-           console.log('没有找到' + baiduindex + '文件!')
+           console.log('没有找到' + baiduindexFile + '文件!')
        }
    }else if( excuteType ==  'merge' ) { // 合并数据
        var dataList = '', readerIndex = 0;
        dirWalker.walk(dirPath, function(filePath){
             if(/getSocial/i.test(filePath)) {
-                var interfaceContent = fs.readFileSync( filePath).toString();
+                var interfaceContent = fs.readFileSync( filePath ).toString();
 
                 if( interfaceContent ) {
                     var interfaceObj = JSON.parse( interfaceContent );
@@ -508,7 +555,7 @@ proxy.getproxy( function( data ){
 
                         interfaceContent = interfaceContent.replace(/[\r\n]/gm, '');
                         dataList += interfaceContent + '\r\n';
-                        createFile(baiduindex, dataList);
+                        createFile(baiduindexFile, dataList);
                         readerIndex++;
                     }
                 }
@@ -520,15 +567,14 @@ proxy.getproxy( function( data ){
    } else { // 读取csv
            nodeCsv.each('mname.csv').on('data', function(data) {
                if( data instanceof Array && data.length ) {
-                   mlist.push(urlencode(data[0], 'gbk'));
+                   mlist.push(trim(data[0]));
                }
            }).on('end', function() {
                var sourceLength = mlist.length;
+
                mlist = unique( mlist );
                len = mlist.length;
                console.log('一共有' + ( sourceLength ) + '个影片关键词，其中有' + ( sourceLength - len ) + '关键词重复，有效关键词有' + len  + '个');
-               createFile('mname.txt', JSON.stringify(mlist));
-
                excuteExec();
 
            });
