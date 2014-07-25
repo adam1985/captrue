@@ -16,8 +16,10 @@ phantom.addCookie({
     'path'  : '/'
 });
 
+page.settings.resourceTimeout = 30 * 1000;
+
 //抓取接口文件
-var captrueInterface = function( config ) {
+var captrueInterface = function( config, callback ) {
     var interfacePath = 'http://index.baidu.com/Interface/';
 
         var postParamStr = page.evaluate(function() {
@@ -67,15 +69,11 @@ var captrueInterface = function( config ) {
                                     msg : key + '.json interface suceess capture!'
                                 };
 
-                            if( isComplete ) {
-                                resJson.complete = true
-                            }
-
                             console.log(JSON.stringify(resJson));
 
                             if( isComplete ) {
                                 page.close();
-                                phantom.exit();
+                                callback && callback();
                             }
 
                             index++;
@@ -108,62 +106,76 @@ var captrueInterface = function( config ) {
 
 
 // 入口文件，开始抓取工作
+var captureIndex = 0;
 var openBaiduIndex = function( settings ) {
     settings  = settings || [];
-    if( settings.length ){
-        settings.forEach(function(pageCof){
-            page.open(pageCof.url + fileName, function(status) {
+    var length = settings.length;
+    if( length ){
+        (function(){
+            var arg = arguments;
+            if( captureIndex < length ) {
+                pageCof = settings[captureIndex];
+                captureIndex++;
+                page.open(pageCof.url + fileName, function(status) {
 
-                if( status === 'success') {
+                    if( status === 'success') {
 
-                    var isResult = page.evaluate(function () {
-                        var worlds = ['立即购买', '未被收录'],
-                            _isResult = true,
-                            content = document.body.innerHTML,
-                            length = document.querySelectorAll('#mainWrap').length;
+                        var isResult = page.evaluate(function () {
+                            var worlds = ['立即购买', '未被收录'],
+                                _isResult = true,
+                                content = document.body.innerHTML,
+                                length = document.querySelectorAll('#mainWrap').length;
 
-                        worlds.forEach(function(v){
-                            if( content.indexOf(v) != -1 ) {
-                                _isResult = false;
-                            }
+                            worlds.forEach(function(v){
+                                if( content.indexOf(v) != -1 ) {
+                                    _isResult = false;
+                                }
+                            });
+
+                            return  _isResult && length > 0;
                         });
 
-                        return  _isResult && length > 0;
-                    });
 
+                        var proxyBlock =  page.evaluate(function () {
+                            return  document.querySelectorAll('#userbar').length == 0;
+                        });
 
-                    var proxyBlock =  page.evaluate(function () {
-                        return  document.querySelectorAll('#userbar').length == 0;
-                    });
+                        //console.log( isResult );
 
-                    //console.log( isResult );
+                        if( proxyBlock ) {
+                            console.log(JSON.stringify({index : filmIndex, block : true, success : false, msg : 'proxy ip block!!!'}));
 
-                    if( proxyBlock ) {
-                        console.log(JSON.stringify({index : filmIndex, block : true, success : false, msg : 'proxy ip block!!!'}));
+                            page.close();
+                            phantom.exit();
+                        } else {
+                            if( isResult ) {
+                                // 生成接口文件
+                                captrueInterface( pageCof, function(){
+                                    arg.callee();
+                                } );
+                            } else {
+                                console.log(JSON.stringify({index : filmIndex, noneres : true, success : false,msg : 'keyword none result!!!'}));
+                                page.close();
+                                phantom.exit();
+                            }
+                        }
+
+                    } else {
+
+                        console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
 
                         page.close();
                         phantom.exit();
-                    } else {
-                        if( isResult ) {
-                            // 生成接口文件
-                            captrueInterface( pageCof );
-                        } else {
-                            console.log(JSON.stringify({index : filmIndex, noneres : true, success : false,msg : 'keyword none result!!!'}));
-                            page.close();
-                            phantom.exit();
-                        }
                     }
 
-                } else {
+                });
+            } else {
+                console.log(JSON.stringify({index : filmIndex, complete : true, msg : 'interface capture complate!'}));
 
-                    console.log(JSON.stringify({index : filmIndex, success : false,msg : 'interface capture fail!'}));
+                phantom.exit();
+            }
 
-                    page.close();
-                    phantom.exit();
-                }
-
-            });
-        });
+        }());
     }
 
 };
@@ -180,6 +192,36 @@ openBaiduIndex([
     }
 ]);
 
+page.onError = function(msg, trace) {
+    console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
+    page.close();
+    phantom.exit();
+};
+
+phantom.onError = function(msg, trace) {
+    console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
+    phantom.exit();
+};
+
+/*page.onResourceError = function(){
+    console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
+    page.close();
+    phantom.exit();
+};*/
+
+page.onResourceTimeout = function(){
+    console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
+    page.close();
+    phantom.exit();
+};
+
+setTimeout(function(){
+     console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
+
+     page.close();
+     phantom.exit();
+
+ }, 30 * 1000);
 
 
 

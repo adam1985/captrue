@@ -14,11 +14,14 @@ var sys = require('sys'),
     dateFormat = require('./module/dateFormat'),
     info = require('./module/info'),
     base64 =  require('./module/base64.js'),
-    tools = require('./module/tools');
+    tools = require('./module/tools'),
+    readJson = require('./module/readJson'),
+    getFilmList = require('./module/getFilmList');
 
 var dirPath = './create/',
     backupPath = './backup/',
     failPath = dirPath + 'fail.txt',
+    successPath = dirPath + 'success.txt',
     noneresPath = dirPath + 'noneres.txt',
     logerPath = dirPath + 'loger.txt',
     baiduindexFile = dirPath + 'baiduindex.txt';
@@ -51,12 +54,12 @@ var arguments = process.argv.splice(2),
     startIndex = getDefaultArg(arguments[1], prevIndex),
     excuteType = arguments[2];
 
-    if( targetProxy == 'repair' || targetProxy == 'merge' || targetProxy == 'unique') {
+    if( targetProxy == 'repair' ||  targetProxy== 'again' ) {
         excuteType = targetProxy;
         targetProxy = 1;
     }
 
-    if( startIndex == 'repair' || startIndex == 'merge' || startIndex == 'unique') {
+    if( startIndex == 'repair' ||  targetProxy== 'again' ) {
         excuteType = startIndex;
         startIndex = prevIndex;
     }
@@ -77,7 +80,8 @@ var phantom,
     failNum = 0,
     noneresNum = 0,
     proxyIpArr = [6, 2, 8, 3, 4, 1],
-    proxyIpIndex = 0;
+    proxyIpIndex = 0,
+    timeout = 30 * 1000, timeoutLink;
 
 // 测试代理ip是否连接正常
 var startCapture = function(ip, success, fail){
@@ -126,10 +130,6 @@ var unique = function (data, isDeep){
 };
 
 
-var trim = function(str) {
-    return str.replace(/^\s+|\s+$/g, '');
-};
-
 
 //备份
 
@@ -152,14 +152,14 @@ var defaultInfo = {
     average : 0
 };
 
-info.createLoger( logerPath, defaultInfo, true );
+info.createLoger( logerPath, defaultInfo, mnameIndex, true );
 
 console.log('start capture!!!');
 
 // 生成百度指数数据
-var createBaiduIndex = function( data ){
+var createBaiduIndex = function( data, mnameIndex ){
     var config = {
-        "1" : "19岁及以下20",
+        "1" : "19岁及以下",
         "2" : "20~29岁",
         "3" : "30~39岁",
         "4" : "40~49岁",
@@ -185,11 +185,14 @@ var createBaiduIndex = function( data ){
             }
         });
 
-        if(fs.existsSync(baiduindexFile)) {
-            fs.appendFileSync(baiduindexFile, result.join(''));
-        } else {
+        isExists = fs.existsSync(baiduindexFile);
+
+        if( ( !isExists || mnameIndex==0 ) && !excuteType ) {
             createFile(baiduindexFile, result.join(''));
+        } else {
+            fs.appendFileSync(baiduindexFile, result.join(''));
         }
+
 
     }
 
@@ -198,36 +201,38 @@ var createBaiduIndex = function( data ){
 // 生成抓取日记
 var longerIndex = 0, pathState = {};
 var captureLoger = function( data, path, isSuccess){
-    var resList = [];
 
-        if( excuteType == 'repair') {
-            var loggerStr = fs.readFileSync(path, 'utf8').toString();
 
-            if( loggerStr ){
-                loggerStr = trim( loggerStr );
-                var loggers = JSON.parse( loggerStr );
-                if( loggers.length ) {
-                    var copyLoggers = loggers.concat();
-                    copyLoggers.forEach(function(v, i){
-                        if(i == data.index ){
-                            copyLoggers.splice(i, 1);
-                        }
-                    });
-                    fs.writeFileSync(path, JSON.stringify(copyLoggers));
+
+    if(  mnameIndex == 0 && !excuteType ) {
+        createFile(path, JSON.stringify(data) + '\r\n');
+    } else {
+        if(fs.existsSync(path)) {
+            var logerList = readJson(path), isHasRecode = false;
+            logerList.forEach(function(v){
+                if(v.index == data.index ) {
+                    isHasRecode = true;
+                    return false;
                 }
+            });
+
+            if( !isHasRecode ) {
+                fs.appendFileSync(path, JSON.stringify(data) + '\r\n');
             }
-        } else if( !isSuccess ){
-            if( !pathState[path] && startIndex == 0  ) {
-                createFile(path, JSON.stringify(data));
-                pathState[path] = 1;
-            } else {
-                if(fs.existsSync(path)) {
-                    fs.appendFileSync(path, JSON.stringify(data) + '\r\n');
-                } else {
-                    createFile(path, JSON.stringify(data) + '\r\n');
-                }
-            }
+        } else {
+            createFile(path, JSON.stringify(data) + '\r\n');
         }
+    }
+
+    if( excuteType == 'repair' && isSuccess ){
+        var fails = readJson(failPath), logerStr = '';
+        fails.forEach(function(v, i){
+            if( i != data.index  ) {
+                logerStr += JSON.stringify( v ) + '\r\n';
+            }
+        });
+        fs.writeFileSync(failPath, logerStr);
+    }
 
     //记录统计
 
@@ -267,17 +272,17 @@ var captureLoger = function( data, path, isSuccess){
     defaultInfo.failNum = failNum;
     defaultInfo.noneresNum = noneresNum;
 
-    info.createLoger( logerPath, defaultInfo );
+    info.createLoger( logerPath, defaultInfo, mnameIndex );
 
-    if( !isSuccess ) {
-        console.log('[' + mnameIndex + '-' + usedIpIndex + ']' + '"' + mlist[mnameIndex] + '"错误日记已记录!');
-    }
+
+    console.log('[' + mnameIndex + '-' + usedIpIndex + ']' + '"' + mlist[mnameIndex] + '"日记已记录!');
+
 
     mnameIndex++;
 
 };
 
-var captureState = {};
+var captureState = {}, userProxyState = {};
 // 递归调用数据抓取
 var excuteExec = function(){
     var arg = arguments, mname = mlist[mnameIndex];
@@ -287,8 +292,17 @@ var excuteExec = function(){
             captureState[mnameIndex]++;
         }
 
+        if( userProxyState[usedIpIndex] === undefined){
+            userProxyState[usedIpIndex] = 0;
+        } else {
+            userProxyState[usedIpIndex]++;
+        }
+
+        timeoutLink && clearTimeout(timeoutLink);
+
         if( phantom ) {
-            phantom.kill();
+            phantom.kill('SIGTERM');
+            usedIpIndex++;
         }
         if(mnameIndex < len && mname){
             var commandArray =[], eachCapture = function(proxyIps){
@@ -312,14 +326,17 @@ var excuteExec = function(){
 
                     //console.log( commandArray.join(' '));
                     phantom = spawn('phantomjs', commandArray, {
-                        timeout : 30 * 1000
+                        timeout : timeout
                     });
+
+                    timeoutLink = setTimeout(function(){
+                        phantom.kill('SIGTERM');
+                    }, timeout);
 
                     phantom.stdout.on('data', function (data) {
                         if( mlist[mnameIndex] ) {
                             data = data.toString();
-                            var stdout = trim( data );
-
+                            var stdout = tools.trim( data );
 
                             var result = {};
 
@@ -337,24 +354,22 @@ var excuteExec = function(){
                                     }, failPath);
 
                                 }
-                                arg.callee();
+                                //arg.callee();
                             }
 
-                            if( result.success ) {
+                            if( result.complete ) {
+
+                                captureLoger({
+                                    index : mnameIndex,
+                                    name : mlist[mnameIndex],
+                                    success : true
+                                }, successPath, true);
+
+                                //arg.callee();
+                            } else if( result.success ) {
                                 console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+'"' + mlist[mnameIndex] + '"抓取成功');
                                 var content = JSON.parse( result.content );
-                                createBaiduIndex( content.data );
-                                if( result.complete ) {
-
-                                    captureLoger({
-                                        index : mnameIndex,
-                                        name : mlist[mnameIndex],
-                                        success : true
-                                    }, failPath,  result.success);
-
-                                    arg.callee();
-                                }
-
+                                createBaiduIndex( content.data, mnameIndex );
 
                             } else {
 
@@ -392,14 +407,14 @@ var excuteExec = function(){
 
                                     }
                                 }
-                                arg.callee();
+                                //arg.callee();
                             }
 
                         }
                     });
 
                     phantom.stderr.on('data', function (data) {
-                        console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+proxyIp+':网络连接超时!');
+                        console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+proxyIp+':网络连接超时1!');
                         if( captureState[mnameIndex] < excuteSize ){
                             usedIpIndex++;
                         } else {
@@ -410,12 +425,32 @@ var excuteExec = function(){
                             }, failPath );
 
                         }
+                        //arg.callee();
+                    });
+
+                    phantom.on('close', function (code,signal) {
+                       phantom.kill(signal);
+                       phantom.stdin.end();
+                    });
+
+                    phantom.on('error',function(code,signal){
+                        phantom.kill(signal);
+                    });
+
+
+                    phantom.on('exit', function (code,signal) {
+                        phantom.kill(signal);
+                        console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+proxyIp+':进程结束，将重新启动抓取!');
+                        phantom.stdin.end();
+                        if( userProxyState[proxyIp] > excuteSize ) {
+                            usedIpIndex++;
+                        } else {
+                            userProxyState[proxyIp]++;
+                        }
                         arg.callee();
                     });
 
-                    phantom.on('close', function (code) {
-                        phantom.stdin.end();
-                    });
+
 
                 }, function(){
                     console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+proxyIp+':网络连接异常!');
@@ -427,7 +462,6 @@ var excuteExec = function(){
                             name : mlist[mnameIndex],
                             success : false
                         }, failPath );
-
                     }
 
                     arg.callee();
@@ -495,89 +529,28 @@ proxy.getproxy( function( data ){
     console.log('一共抓取了' + totalIplength + '个代理ip');
 
    if( excuteType ==  'repair') { // 修复模式
-         var mlistRes = fs.readFileSync(failPath, 'utf8').toString();
-         if( mlistRes ){
-             mlistRes = trim(mlistRes);
-             var mlistArr = JSON.parse( mlistRes );
-             logerList = mlistArr;
+         var mlistArr = readJson(failPath);
              if( mlistArr.length ){
                  mlistArr.forEach( function(v){
                         if( !v.success ) {
-                            mlist.push(urlencode(v.name, 'gbk'));
+                            mlist.push(v.name);
                         }
                  });
-
                  len = mlist.length;
-
-                 createFile('mname.txt', JSON.stringify(mlist));
-
                  excuteExec();
-
              }
+   } else if(excuteType ==  'again' || !excuteType) { // 读取csv
 
-         }
-   } else if( excuteType ==  'unique') {
-       if( fs.existsSync( baiduindexFile ) ) {
-            var baideindexStr = fs.readFileSync( baiduindexFile ).toString();
-           if( baideindexStr ){
-               var baiduindexList = baideindexStr.split(/\r\n/);
-               baiduindexList.forEach(function(v, i){
-                   baiduindexList[i] = JSON.parse( v );
-               });
+       getFilmList('flimlist.csv', function(filmList){
+           mlist = filmList;
+           var sourceLength = mlist.length;
 
-               baiduindexList = unique(baiduindexList, true);
+           mlist = unique( mlist );
+           len = mlist.length;
+           console.log('一共有' + ( sourceLength ) + '个影片关键词，其中有' + ( sourceLength - len ) + '关键词重复，有效关键词有' + len  + '个');
+           excuteExec();
 
-               baiduindexList.forEach(function(v, i){
-                   if( i > 0) {
-                       var baiduindexContent = fs.readFileSync( baiduindexFile );
-                       baiduindexContent += JSON.stringify( v ) + '\r\n';
-                       fs.writeFileSync( baiduindexFile, baiduindexContent);
-
-                   } else {
-                       fs.writeFileSync( baiduindexFile, JSON.stringify( v ));
-                   }
-
-               });
-
-           }
-       } else {
-           console.log('没有找到' + baiduindexFile + '文件!')
-       }
-   }else if( excuteType ==  'merge' ) { // 合并数据
-       var dataList = '', readerIndex = 0;
-       dirWalker.walk(dirPath, function(filePath){
-            if(/getSocial/i.test(filePath)) {
-                var interfaceContent = fs.readFileSync( filePath ).toString();
-
-                if( interfaceContent ) {
-                    var interfaceObj = JSON.parse( interfaceContent );
-                    if( interfaceObj.data && interfaceObj.data.length ) {
-
-                        interfaceContent = interfaceContent.replace(/[\r\n]/gm, '');
-                        dataList += interfaceContent + '\r\n';
-                        createFile(baiduindexFile, dataList);
-                        readerIndex++;
-                    }
-                }
-            }
-       });
-
-
-
-   } else { // 读取csv
-           nodeCsv.each('mname.csv').on('data', function(data) {
-               if( data instanceof Array && data.length ) {
-                   mlist.push(trim(data[0]));
-               }
-           }).on('end', function() {
-               var sourceLength = mlist.length;
-
-               mlist = unique( mlist );
-               len = mlist.length;
-               console.log('一共有' + ( sourceLength ) + '个影片关键词，其中有' + ( sourceLength - len ) + '关键词重复，有效关键词有' + len  + '个');
-               excuteExec();
-
-           });
+       }, excuteType);
    }
 });
 

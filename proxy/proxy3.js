@@ -14,12 +14,13 @@ var createFile = function( path, content ) {
 
 var getproxy = function( callback ) {
     console.log('start getproxy ip...');
+    var proxyList = [];
 
     ng.get('http://pachong.org/area/short/name/cn.html',function(data) {
         $ = cheerio.load(data);
         var table = $('table[class="tb"]'),
-            lineTr = table.find('tbody').find('tr'),
-            proxyList = [];
+            lineTr = table.find('tbody').find('tr');
+
 
         lineTr.each(function ( index ) {
             var ceils = $(this).find('td');
@@ -31,6 +32,8 @@ var getproxy = function( callback ) {
 
         callback && callback(proxyList);
 
+    }).on('error', function(e) {
+        callback && callback(proxyList);
     });
 };
 
