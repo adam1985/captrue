@@ -1,1 +1,2 @@
-{"startIndex":"0","endIndex":49,"excuteNum":49,"startTime":"2014-07-25 17:45:29","endTime":"2014-07-25 17:58:35","dur":"13分6秒","average":"16秒","length":27487,"proxyIp":"222.74.6.32:8000","usedIpIndex":140,"sucessNum":32,"failNum":2,"noneresNum":16}
+{"startIndex":"0","endIndex":99,"excuteNum":99,"startTime":"2014-07-25 17:45:29","endTime":"2014-07-25 18:07:54","dur":"22分25秒","average":"13秒","length":27487,"proxyIp":"114.80.240.6:8080","usedIpIndex":176,"sucessNum":48,"failNum":29,"noneresNum":23}
+{"startIndex":100,"endIndex":104,"excuteNum":4,"startTime":"2014-07-25 18:08:19","endTime":"2014-07-25 18:09:43","dur":"1分23秒","average":"20秒","length":27487,"proxyIp":"59.46.72.245:8080","usedIpIndex":11,"sucessNum":4,"failNum":0,"noneresNum":1}

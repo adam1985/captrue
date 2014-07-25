@@ -1,16 +1,16 @@
 var cheerio = require('cheerio'),
-	fs = require('fs'),
+    fs = require('fs'),
     ng = require('nodegrass');
-	
-	
-var startIndex = 1, pageSize = 20;
+
+
+var startIndex = 1, pageSize = 38;
 var createFile = function( path, content ) {
-	var isexists = fs.existsSync(path);
-	if(isexists) {
-		fs.unlinkSync(path);
-	}
-	fs.writeFileSync(path, content);
-	
+    var isexists = fs.existsSync(path);
+    if(isexists) {
+        fs.unlinkSync(path);
+    }
+    fs.writeFileSync(path, content);
+
 };
 
 var getproxy = function( callback ) {
@@ -21,16 +21,18 @@ var getproxy = function( callback ) {
     (function () {
         var args = arguments;
         if (startIndex <= pageSize) {
-            ng.get('http://www.kuaidaili.com/proxylist/' + startIndex, function (data) {
+            ng.get('http://www.xici.net.co/nt/' + startIndex, function (data) {
 
                 $ = cheerio.load(data);
-                var table = $('table'),
-                    lineTr = table.find('tbody tr'),
+                var table = $('#ip_list'),
+                    lineTr = table.find('tr'),
                     proxyList = [];
 
                 lineTr.each(function (index) {
                     var ceils = $(this).find('td');
-                        proxyList.push(ceils.eq(0).text() + ':' + ceils.eq(1).text());
+                    if( index > 0 ) {
+                        proxyList.push(ceils.eq(1).text() + ':' + ceils.eq(2).text());
+                    }
                 });
 
                 if (startIndex === 1) {
@@ -52,6 +54,8 @@ var getproxy = function( callback ) {
 
                 args.callee();
 
+            }, {
+                "User-Agent" : "chrome"
             }).on('error', function(e) {
                 args.callee();
             });

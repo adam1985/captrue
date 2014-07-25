@@ -79,7 +79,7 @@ var phantom,
     sucessNum = 0,
     failNum = 0,
     noneresNum = 0,
-    proxyIpArr = [6, 2, 8, 3, 4, 1],
+    proxyIpArr = [1, 2, 3, 4, 5],
     proxyIpIndex = 0,
     timeout = 30 * 1000, timeoutLink;
 
