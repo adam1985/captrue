@@ -29,3 +29,5 @@ http://pachong.org/?page=5
 http://www.xici.net.co/
 
 http://www.kuaidaili.com/proxylist/10/
+
+cd /root/phantom && sudo /usr/bin/nohup /usr/local/bin/node index 5 &
