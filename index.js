@@ -202,16 +202,18 @@ var createBaiduIndex = function( data, mnameIndex ){
 var longerIndex = 0, pathState = {};
 var captureLoger = function( data, path, isSuccess){
 
-
-
     if(  mnameIndex == 0 && !excuteType ) {
         createFile(path, JSON.stringify(data) + '\r\n');
     } else {
         if(fs.existsSync(path)) {
             var logerList = readJson(path), isHasRecode = false;
-            logerList.forEach(function(v){
-                if(v.index == data.index ) {
+            logerList.forEach(function(v, i){
+                if(v.name == data.name ) {
                     isHasRecode = true;
+                    if( excuteType == 'repair' ) {
+                        data.index = v.index;
+                    }
+
                     return false;
                 }
             });
@@ -227,7 +229,7 @@ var captureLoger = function( data, path, isSuccess){
     if( excuteType == 'repair' && isSuccess ){
         var fails = readJson(failPath), logerStr = '';
         fails.forEach(function(v, i){
-            if( i != data.index  ) {
+            if(v.name != data.name  ) {
                 logerStr += JSON.stringify( v ) + '\r\n';
             }
         });
