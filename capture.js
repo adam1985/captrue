@@ -16,7 +16,9 @@ phantom.addCookie({
     'path'  : '/'
 });
 
-page.settings.resourceTimeout = 30 * 1000;
+var timeout = 30 * 1000;
+
+page.settings.resourceTimeout = timeout;
 
 //抓取接口文件
 var captrueInterface = function( config, callback ) {
@@ -27,7 +29,6 @@ var captrueInterface = function( config, callback ) {
                 res : PPval.ppt,
                 res2 : PPval.res2
             };
-
         });
 
         var index = 0, len = config.interfaces.length;
@@ -171,7 +172,7 @@ var openBaiduIndex = function( settings ) {
                 });
             } else {
                 console.log(JSON.stringify({index : filmIndex, complete : true, msg : 'interface capture complate!'}));
-
+				page.close();
                 phantom.exit();
             }
 
@@ -192,7 +193,7 @@ openBaiduIndex([
     }
 ]);
 
-page.onError = function(msg, trace) {
+/*page.onError = function(msg, trace) {
     console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
     page.close();
     phantom.exit();
@@ -201,7 +202,7 @@ page.onError = function(msg, trace) {
 phantom.onError = function(msg, trace) {
     console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
     phantom.exit();
-};
+};*/
 
 /*page.onResourceError = function(){
     console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
@@ -217,11 +218,10 @@ page.onResourceTimeout = function(){
 
 setTimeout(function(){
      console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
-
      page.close();
      phantom.exit();
 
- }, 30 * 1000);
+ }, timeout);
 
 
 

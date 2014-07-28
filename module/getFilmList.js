@@ -4,9 +4,10 @@ var nodeCsv = require('node-csv'),
 
 var mlist = [];
  var getFilmList = function( path, cb, isNew){
-     var objState = {};
+     var objState = {}, againIndex = 0;
      if( isNew ) {
          var resList = readJson('./create/success.txt');
+         againIndex = resList[resList.length-1].index || 0;
          resList.forEach(function(v){
              objState[v] = 1;
          });
@@ -24,7 +25,7 @@ var mlist = [];
              }
          }
      }).on('end', function() {
-         cb && cb( mlist );
+         cb && cb( mlist, againIndex );
      });
  };
 
