@@ -102,12 +102,18 @@ var startCapture = function(ip, success, fail){
         var client = net.createConnection(ipArr[1], ipArr[0]);
         client.on('connect', function () {
             success();
+            client.destroy();
         });
         client.on('error', function(e) {
             fail();
+            client.destroy();
+        });
+        client.on('timeout', function(e) {
+            fail();
+            client.destroy();
         });
     } catch (e){
-        //fail();
+        fail();
     }
 
 };
@@ -375,8 +381,10 @@ var excuteExec = function(){
 						if( pid ) {
 							spawn('kill', ['-9', pid]);
 						}
-						
-						usedIpIndex++;
+
+                        console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+proxyIp+':网络连接超时2!');
+
+                        usedIpIndex++;
 						arg.callee();
                     }, timeout);
 
@@ -461,7 +469,7 @@ var excuteExec = function(){
                     });
 
                     phantom.stderr.on('data', function (data) {
-                        console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+proxyIp+':网络连接超时!');
+                        console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+proxyIp+':网络连接超时1!');
                         if( captureState[mnameIndex] < excuteSize ){
                             usedIpIndex++;
                         } else {
@@ -477,7 +485,7 @@ var excuteExec = function(){
 
                     phantom.on('close', function (code,signal) {
                        phantom.kill(signal);
-                       phantom.stdin.end();
+                       //phantom.stdin.end();
                     });
 
                     phantom.on('error',function(code,signal){
@@ -488,7 +496,7 @@ var excuteExec = function(){
                     phantom.on('exit', function (code,signal) {
                         phantom.kill(signal);
                         console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+proxyIp+':进程结束，将重新启动抓取!');
-                        phantom.stdin.end();
+                        //phantom.stdin.end();
                         /*if( userProxyState[proxyIp] >= excuteSize ) {
 							usedIpIndex++;
 						}
@@ -548,11 +556,12 @@ var excuteExec = function(){
                     });
                 }());
 
-
 			} else {
                 eachCapture( proxyIps );
             }
 
+        } else {
+            console.log('执行完毕');
         }
 };
 
@@ -580,6 +589,8 @@ proxy.getproxy( function( data ){
                         }
                  });
                  len = mlist.length;
+                 console.log('fail.txt文件列表中关键词一共有' + len  + '个');
+
                  excuteExec();
     }
    } else if(excuteType ==  'again' || !excuteType) { // 读取csv

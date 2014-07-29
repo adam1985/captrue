@@ -1,1 +1,1 @@
-{"startIndex":"0","endIndex":12,"excuteNum":12,"startTime":"2014-07-28 16:30:00","endTime":"2014-07-28 16:32:59","dur":"2分58秒","average":"14秒","length":27487,"proxyIp":"114.80.136.112:7780","usedIpIndex":4,"sucessNum":9,"failNum":0,"noneresNum":4}
+{"startIndex":"0","endIndex":18,"excuteNum":18,"startTime":"2014-07-29 14:11:09","endTime":"2014-07-29 14:13:39","dur":"2分30秒","average":"8秒","length":11919,"proxyIp":"222.74.6.32:8000","usedIpIndex":34,"sucessNum":7,"failNum":5,"noneresNum":7}
