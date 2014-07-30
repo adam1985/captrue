@@ -136,7 +136,6 @@ var openBaiduIndex = function( settings ) {
                             return  _isResult && length > 0;
                         });
 
-
                         var proxyBlock =  page.evaluate(function () {
                             return  document.querySelectorAll('#userbar').length == 0;
                         });
@@ -201,14 +200,17 @@ openBaiduIndex([
 
 phantom.onError = function(msg, trace) {
     console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
-    phantom.exit();
-};*/
-
-/*page.onResourceError = function(){
-    console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
     page.close();
     phantom.exit();
 };*/
+
+/*
+page.onResourceError = function(){
+    console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
+    page.close();
+    phantom.exit();
+};
+*/
 
 page.onResourceTimeout = function(){
     console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));

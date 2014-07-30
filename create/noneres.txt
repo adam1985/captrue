@@ -9284,3 +9284,40 @@
 {"index":94,"name":"等不及说爱你","success":false}
 {"index":95,"name":"化身博士","success":false}
 {"index":119,"name":"恐惧吞噬心灵","success":false}
+{"index":68,"name":"落入凡间的音符","success":false}
+{"index":150,"name":"星球大战2: 帝国反击战","success":false}
+{"index":152,"name":"K-19: 寡妇制造者","success":false}
+{"index":157,"name":"扑克俱乐部","success":false}
+{"index":158,"name":"奈绪子","success":false}
+{"index":162,"name":"小贼·美女·妙探","success":false}
+{"index":174,"name":"美版午夜凶铃","success":false}
+{"index":177,"name":"恋恋花园","success":false}
+{"index":180,"name":"预:忍者刺客","success":false}
+{"index":199,"name":"预:杀人宝盒","success":false}
+{"index":210,"name":"街霸! GTR","success":false}
+{"index":215,"name":"冰河世纪2: 冰川融解","success":false}
+{"index":220,"name":"蓝色的40道阴影","success":false}
+{"index":230,"name":"切·格瓦拉: 游击队","success":false}
+{"index":233,"name":"血腥星期天","success":false}
+{"index":244,"name":"该诅咒的人","success":false}
+{"index":257,"name":"马江宾馆","success":false}
+{"index":259,"name":"GeGeGe的鬼太郎: 千年咒歌","success":false}
+{"index":273,"name":"午夜雄鹰","success":false}
+{"index":296,"name":"给他们一个机会","success":false}
+{"index":301,"name":"百人斩少女3: 赤裸忍者","success":false}
+{"index":309,"name":"坠入","success":false}
+{"index":315,"name":"肥仔快跑","success":false}
+{"index":316,"name":"星球大战前传一: 魅影危机-国","success":false}
+{"index":321,"name":"爱在此生终结时","success":false}
+{"index":335,"name":"姜哲中: 公共之敌1-1","success":false}
+{"index":340,"name":"虎胆龙威2-国","success":false}
+{"index":344,"name":"大转折——挺进大别山","success":false}
+{"index":349,"name":"黑夜传说2: 进化","success":false}
+{"index":350,"name":"考死: 血之期中考试","success":false}
+{"index":375,"name":"水中刀","success":false}
+{"index":383,"name":"败者复活战","success":false}
+{"index":386,"name":"雷霆杀机","success":false}
+{"index":393,"name":"人烟之岛: 战斗","success":false}
+{"index":402,"name":"寻找邱比特之箭","success":false}
+{"index":404,"name":"自豪与荣耀","success":false}
+{"index":407,"name":"阿基里斯与龟","success":false}

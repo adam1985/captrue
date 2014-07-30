@@ -95,8 +95,20 @@ if( mnameIndex == 0 && !excuteType){
     restartExcute = true
 }
 
+// 重写console.log方法
+console.log = (function(){
+    var _log = console.log;
+    return function(){
+        var now = new Date(),
+            args = [].slice.call(arguments, 0);
+        args.push( now.format("hh:mm:ss") );
+        _log.apply(console, args);
+    };
+}());
+
 // 测试代理ip是否连接正常
 var startCapture = function(ip, success, fail){
+    console.log('[' + mnameIndex + '-' + usedIpIndex + ']' + '"' + mlist[mnameIndex] + '"正在检测ip是否连接正常!');
     try{
         var ipArr = ip.split(":");
         var client = net.createConnection(ipArr[1], ipArr[0]);
@@ -108,13 +120,14 @@ var startCapture = function(ip, success, fail){
             fail();
             client.destroy();
         });
-        client.on('timeout', function(e) {
+        /*client.on('timeout', function(e) {
             fail();
             client.destroy();
-        });
+        });*/
     } catch (e){
         fail();
     }
+
 
 };
 
@@ -155,8 +168,6 @@ var initTime = new Date();
 var dateString = initTime.format("yyyyMMddhhmmss");
 spawn('cp', ["-r", dirPath, backupPath + dateString] );
 console.log('成功备份数据');
-
-
 
 // 统计
 var defaultInfo = {
@@ -409,7 +420,7 @@ var excuteExec = function(){
                                     }, failPath);
 
                                 }
-                                arg.callee();
+                                //arg.callee();
                             }
 
                             if( result.complete ) {
@@ -420,13 +431,13 @@ var excuteExec = function(){
                                     success : true
                                 }, successPath, true);
 
-                                arg.callee();
+                                //arg.callee();
                             } else if( result.success ) {
                                 console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+'"' + mlist[mnameIndex] + '"抓取成功');
                                 var content = JSON.parse( result.content );
                                 createBaiduIndex( content.data, mnameIndex, mlist[mnameIndex] );
 
-                            } else {
+                            } else if(result.success === false ){
 
                                 if( result.noneres ) {
                                     console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+'"' + mlist[mnameIndex] + '"关键词未收录，没有结果!');
@@ -462,7 +473,7 @@ var excuteExec = function(){
 
                                     }
                                 }
-                                arg.callee();
+                                //arg.callee();
                             }
 
                         }
@@ -480,12 +491,12 @@ var excuteExec = function(){
                             }, failPath );
 
                         }
-                        arg.callee();
+                        //arg.callee();
                     });
 
                     phantom.on('close', function (code,signal) {
                        phantom.kill(signal);
-                       //phantom.stdin.end();
+                       phantom.stdin.end();
                     });
 
                     phantom.on('error',function(code,signal){
@@ -496,11 +507,11 @@ var excuteExec = function(){
                     phantom.on('exit', function (code,signal) {
                         phantom.kill(signal);
                         console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+proxyIp+':进程结束，将重新启动抓取!');
-                        //phantom.stdin.end();
+                        phantom.stdin.end();
                         /*if( userProxyState[proxyIp] >= excuteSize ) {
 							usedIpIndex++;
-						}
-                        arg.callee();*/
+						}*/
+                        arg.callee();
                     });
 
                 }, function(){
