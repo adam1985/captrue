@@ -90,4 +90,24 @@
         return str.replace(/^\s+|\s+$/g, '');
     };
 
+    tools_.unique = function (data, isDeep){
+        data = data || [];
+        var a = {}, res = [];
+        for (var i=0; i<data.length; i++) {
+            var v;
+            if( isDeep ) {
+                v = data[i].data[0].word;
+            } else {
+                v = data[i];
+            }
+
+            if (typeof(a[v]) == 'undefined'){
+                a[v] = 1;
+                res.push( v );
+            }
+        }
+
+        return res;
+    };
+
     module.exports = tools_ ;

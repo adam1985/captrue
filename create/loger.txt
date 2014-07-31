@@ -1,11 +1,1 @@
-{"startIndex":"0","endIndex":18,"excuteNum":18,"startTime":"2014-07-29 14:11:09","endTime":"2014-07-29 14:13:39","dur":"2分30秒","average":"8秒","length":11919,"proxyIp":"222.74.6.32:8000","usedIpIndex":34,"sucessNum":7,"failNum":5,"noneresNum":7}
-{"startIndex":19,"endIndex":19,"excuteNum":0,"startTime":"2014-07-30 09:39:42","endTime":"2014-07-30 09:39:42","dur":0,"average":0}
-{"startIndex":20,"endIndex":48,"excuteNum":28,"startTime":"2014-07-30 09:39:50","endTime":"2014-07-30 09:45:13","dur":"5分22秒","average":"11秒","length":27487,"proxyIp":"182.93.247.102:8080","usedIpIndex":9,"sucessNum":20,"failNum":3,"noneresNum":6}
-{"startIndex":49,"endIndex":252,"excuteNum":203,"startTime":"2014-07-30 09:45:20","endTime":"2014-07-30 13:09:59","dur":"3时24分38秒","average":"1分0秒","length":27487,"proxyIp":"218.28.112.114:809","usedIpIndex":551,"sucessNum":0,"failNum":171,"noneresNum":33}
-{"startIndex":253,"endIndex":253,"excuteNum":0,"startTime":"2014-07-30 14:27:08","endTime":"2014-07-30 14:27:08","dur":0,"average":0}
-{"startIndex":254,"endIndex":254,"excuteNum":0,"startTime":"2014-07-30 14:28:05","endTime":"2014-07-30 14:28:05","dur":0,"average":0}
-{"startIndex":255,"endIndex":274,"excuteNum":19,"startTime":"2014-07-30 14:30:00","endTime":"2014-07-30 14:35:35","dur":"5分35秒","average":"17秒","length":27487,"proxyIp":"220.181.32.106:80","usedIpIndex":7,"sucessNum":12,"failNum":1,"noneresNum":7}
-{"startIndex":275,"endIndex":307,"excuteNum":32,"startTime":"2014-07-30 14:35:40","endTime":"2014-07-30 14:49:05","dur":"13分24秒","average":"25秒","length":27487,"proxyIp":"58.68.246.12:18080","usedIpIndex":24,"sucessNum":18,"failNum":7,"noneresNum":8}
-{"startIndex":308,"endIndex":412,"excuteNum":104,"startTime":"2014-07-30 14:49:44","endTime":"2014-07-30 15:44:20","dur":"54分36秒","average":"31秒","length":27487,"proxyIp":"76.164.213.124:7808","usedIpIndex":149,"sucessNum":48,"failNum":34,"noneresNum":23}
-{"startIndex":413,"endIndex":413,"excuteNum":0,"startTime":"2014-07-30 15:44:47","endTime":"2014-07-30 15:44:47","dur":0,"average":0}
-{"startIndex":414,"endIndex":414,"excuteNum":0,"startTime":"2014-07-30 15:46:39","endTime":"2014-07-30 15:46:39","dur":0,"average":0}
+{"startIndex":"0","endIndex":"0","excuteNum":0,"startTime":"2014-07-31 17:06:06","endTime":"2014-07-31 17:06:06","dur":0,"average":0}

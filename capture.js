@@ -67,6 +67,7 @@ var captrueInterface = function( config, callback ) {
                                     index : filmIndex,
                                     success : true,
                                     content : content,
+                                    face : key,
                                     msg : key + '.json interface suceess capture!'
                                 };
 
