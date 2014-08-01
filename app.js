@@ -109,9 +109,10 @@ getAllFilmList('flimlist.csv', function(data){
         }
 
         // >>node.log 2>&1  &
-        spawn('forever', ["start", "index", random(), startIndex, excuteType, i]).stdout.on('data', function (stdout) {
+        spawn('node', ["index", random(), startIndex, excuteType, i]).stdout.on('data', function (stdout) {
             console.log(stdout.toString());
         });
+
     }
 
     console.log('已经启动服务，数据正在抓取!');
