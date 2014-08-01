@@ -1,34 +1,31 @@
 var fs = require('fs');
 var tools = require('./tools');
 var lineReader = require('line-reader');
-var readJosn = function( path ) {
-    var resList = [];
+var readJson = function( path, cb, type ) {
+    var resList = [],mlist = [];
     if( fs.existsSync( path ) ) {
-        var content = '';
 
         lineReader.eachLine(path, function(line) {
-            content += line;
+            mlist.push( tools.trim(line));
         }).then(function () {
-            if( content ) {
+            if( type == 'json' ) {
+                mlist.forEach(function(v, i){
+                    try{
+                        resList.push(JSON.parse(tools.trim(v)));
+                    }catch (e){
 
-                var contentArr =  content.split(/\r\n/);
-
-                contentArr.forEach(function(v, i){
-
-                    if(v) {
-                        try{
-                            resList.push( JSON.parse(tools.trim(v)) );
-                        }catch (e){
-
-                        }
                     }
                 });
+            } else {
+                resList = mlist;
             }
-        });
-    }
 
-    return resList;
+            cb && cb( resList );
+        });
+    } else {
+        cb && cb( resList );
+    }
 };
 
-module.exports = readJosn;
+module.exports = readJson;
 

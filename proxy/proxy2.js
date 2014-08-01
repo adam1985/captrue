@@ -35,6 +35,9 @@ var getproxy = function( callback ) {
 
                 index++;
                 args.callee();
+            }).on('error', function(){
+                index++;
+                args.callee();
             });
         } else {
             createFile('ip.txt', JSON.stringify(proxyList));

@@ -24,7 +24,8 @@ var getproxy = function( callback ) {
 
         lineTr.each(function ( index ) {
             var ceils = $(this).find('td');
-                proxyList.push(ceils.eq(1).text() + ':' + ceils.eq(2).text());
+
+            proxyList.push(ceils.eq(1).text() + ':' + ceils.eq(2).text());
 
         });
 

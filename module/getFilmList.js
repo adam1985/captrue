@@ -6,7 +6,7 @@ var nodeCsv = require('node-csv'),
 
 
 var getFilmList = function( workPath, cb, type){
-     var objState = {}, content = '', resList = [], againIndex;
+     var objState = {}, resList = [], mlist = [], againIndex;
      if( type == 'again' ) {
          var successList = readJson(workPath + 'success.txt');
          var noneresList = readJson(workPath + 'noneres.txt');
@@ -20,20 +20,14 @@ var getFilmList = function( workPath, cb, type){
      }
 
      lineReader.eachLine(workPath + 'filmlist.txt', function(line) {
-         content += line;
+         mlist.push( tools.trim(line));
      }).then(function () {
-         if( content ) {
-
-             var contentArr =  content.split(/\r\n/);
-
-             contentArr.forEach(function(v, i){
-                 var filmName = tools.trim(v);
-                 if( filmName && !objState[filmName]) {
-                     resList.push( filmName );
-                 }
-
-             });
-         }
+         mlist.forEach(function(v, i){
+             var filmName = tools.trim(v);
+             if( filmName && !objState[filmName]) {
+                 resList.push( filmName );
+             }
+         });
 
          cb && cb( resList, againIndex );
      });

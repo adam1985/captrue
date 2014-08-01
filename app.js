@@ -1,3 +1,4 @@
+
 /**
  * 使用命令
  *  node app [startIndex] [excuteType] [taskAmount]
@@ -14,7 +15,7 @@ var sys = require('sys'),
 var dirPath = './create/',
     backupPath = './backup/';
 
-var proxyIpArr = [1, 2, 3, 4, 5, 6, 7, 8, 9],
+var proxyIpArr = [1, 2, 4, 5, 6, 7, 8, 9],
     proxyIpIndex = 0;
 
 var random = function(){
@@ -28,9 +29,9 @@ var random = function(){
  */
 
 var arguments = process.argv.splice(2);
-    if( arguments.length < 3 ){
-        throw new Error('至少需要三个参数');
-    }
+if( arguments.length < 3 ){
+    throw new Error('至少需要三个参数');
+}
 
 var startIndex = parseInt(arguments[0]),
     excuteType = arguments[1],
@@ -46,9 +47,10 @@ console.log('成功备份数据');
 
 getAllFilmList('flimlist.csv', function(data){
     var filmType = tools.trim(data[4]);
-    return filmType != '电影';
+    return true;
 }, function(mList){
     console.log('正在分配任务，请稍后...');
+    console.log('总共有' + ( mList.length ) + '个影片关键词!');
     var tastSize = parseInt(mList.length / taskAmount),
         remainSize = mList % taskAmount,
         filmPath = dirPath + 'filmlist.txt';
@@ -81,6 +83,9 @@ getAllFilmList('flimlist.csv', function(data){
         }
 
         if( !fs.existsSync(tastName) ){
+            //spawn('mkdir',[tastName]);
+            //spawn('mkdir',[dataDir]);
+            //spawn('mkdir',[backupDir]);
             fs.mkdirSync(tastName, {mode : 'r+'});
             fs.mkdirSync(dataDir, {mode : 'r+'});
             fs.mkdirSync(backupDir, {mode : 'r+'});
@@ -103,12 +108,33 @@ getAllFilmList('flimlist.csv', function(data){
             });
         }
 
-        spawn('node', ["index", proxyIpArr[random()], startIndex, excuteType, i, '>>node.log', '2>&1', '&'] );
+        // >>node.log 2>&1  &
+        spawn('forever', ["start", "index", random(), startIndex, excuteType, i]).stdout.on('data', function (stdout) {
+            console.log(stdout.toString());
+        });
     }
+
+    console.log('已经启动服务，数据正在抓取!');
 
 });
 
-nodejs server.js >>node.log 2>&1 &
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
