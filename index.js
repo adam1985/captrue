@@ -9,6 +9,7 @@ var sys = require('sys'),
     spawn = require('child_process').spawn,
     urlencode = require('urlencode'),
     nodeCsv = require('node-csv'),
+    os = require('os'),
     net = require('net'),
     iconv = require('iconv-lite'),
     lineReader = require('line-reader'),
@@ -41,7 +42,7 @@ if( arguments.length < 4 ){
     throw new Error('至少需要四个参数');
 }
 
-var proxyIpArr = [1, 2, 4, 5, 6, 7, 8, 9],
+var proxyIpArr = [1, 2, 3, 4, 5, 6, 7, 8, 9],
     proxyIpIndex = parseInt(arguments[0]);
 
 var targetProxy = proxyIpArr[proxyIpIndex],
@@ -164,7 +165,10 @@ console.log = (function(){
 }());
 
 // 测试代理ip是否连接正常
+var tcpTimeout = 30 * 1000, tcpLink;
+
 var startCapture = function(ip, success, fail){
+	//tcpLink && clearTimeout(tcpLink);
     console.log('[' + mnameIndex + '-' + usedIpIndex + ']' + '"' + ip + '"正在检测ip是否连接正常!');
     try{
         var ipArr = ip.split(":");
@@ -184,6 +188,11 @@ var startCapture = function(ip, success, fail){
     } catch (e){
         fail();
     }
+	
+	/*tcpLink = setTimeout(function(){
+		fail();
+		client.destroy();
+	}, tcpTimeout);*/
 
 
 };
@@ -199,6 +208,7 @@ if( !fs.existsSync(backupPath) ){
     fs.mkdirSync(backupPath, {mode : 'r+'});
 }
 spawn('cp', ["-r", dataPath, backupPath + dateString] );
+
 console.log('成功备份数据');
 
 // 统计
@@ -434,14 +444,13 @@ var excuteExec = function(){
                         //commandArray.push( '--proxy-type=http' );
                     }
 
-                    commandArray.push( '--output-encoding=gbk' );
+                  commandArray.push( '--output-encoding=gbk' );
 
                     //commandArray.push( '--script-encoding=gbk' );
 
                     commandArray.push( 'capture.js' );
                     commandArray.push( mnameIndex, base64.encode( urlencode( mname , 'gbk')), taskIndex  );
 
-                    //console.log( commandArray.join(' '));
                     phantom = spawn('phantomjs', commandArray, {
                         timeout : timeout
                     });
@@ -463,12 +472,13 @@ var excuteExec = function(){
                     phantom.stdout.on('data', function (data) {
                         if( mlist[mnameIndex] ) {
                             data = data.toString();
+
                             var stdout = tools.trim( data );
 
                             var result = {};
 
                             try{
-                                result = JSON.parse( stdout );
+                                result =  JSON.parse( stdout );
                             }catch( e ){
                                 console.log('[' + mnameIndex + '-' + usedIpIndex + ']' + '"' + mlist[mnameIndex] + '"json数据解析错误，抓取失败，重新抓取');
                                 if( captureState[mnameIndex] < excuteSize ) {
@@ -498,6 +508,7 @@ var excuteExec = function(){
                                 //arg.callee();
                             } else if( result.success ) {
                                 console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+'"' + mlist[mnameIndex] + result.face + '接口"抓取成功');
+								
                                 var content = JSON.parse( result.content );
                                 createBaiduIndex( content.data, mnameIndex, mlist[mnameIndex] );
 

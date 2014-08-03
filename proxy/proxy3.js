@@ -1,5 +1,6 @@
 var cheerio = require('cheerio'),
 	fs = require('fs'),
+    urlencode = require('urlencode'),
     ng = require('nodegrass');
 
 
@@ -12,22 +13,24 @@ var createFile = function( path, content ) {
 	
 };
 
+var areas = ['北京','广东','辽宁'];
+var  Operators = ['电信','联通','移动'];
+
+
 var getproxy = function( callback ) {
     console.log('start getproxy ip...');
     var proxyList = [];
 
-    ng.get('http://pachong.org/area/short/name/cn.html',function(data) {
+    ng.get('http://mianfeidaili.ttju.cn/getAgent.php?Number=10000&Area=' + urlencode(Operators[0], 'gbk') + '&Operators=' + urlencode(areas[0], 'gbk') + '&port=%C7%EB%CC%EE%D0%B4%CB%F9%D0%E8%B5%C4%B6%CB%BF%DA&list=Blist',function(data) {
         $ = cheerio.load(data);
-        var table = $('table[class="tb"]'),
-            lineTr = table.find('tbody').find('tr');
 
+        var content = $('body').html(),
+            rex = /\d+\.\d+\.\d+\.\d+:\d+/gm,
+            proxyIps = content.match(rex);
+        if( proxyIps.length ){
+            proxyList = proxyIps;
+        }
 
-        lineTr.each(function ( index ) {
-            var ceils = $(this).find('td');
-
-            proxyList.push(ceils.eq(1).text() + ':' + ceils.eq(2).text());
-
-        });
 
         createFile('ip.txt', JSON.stringify(proxyList));
 

@@ -31,3 +31,9 @@ http://www.xici.net.co/
 http://www.kuaidaili.com/proxylist/10/
 
 cd /root/phantom && sudo /usr/bin/nohup /usr/local/bin/node index 5 &
+
+
+
+http://www.cz88.net/proxy/index.aspx
+
+http://www.56ads.com/proxyip/

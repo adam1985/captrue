@@ -60,6 +60,9 @@ var getproxy = function( callback ) {
 
                 args.callee();
 
+            }).on('error', function(){
+                    startIndex++;
+                    args.callee();
             });
         } else {
             console.log('done!!!');
@@ -67,6 +70,7 @@ var getproxy = function( callback ) {
         }
 
     }());
+
 
 };
 

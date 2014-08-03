@@ -91,22 +91,18 @@ getAllFilmList('flimlist.csv', function(data){
             fs.mkdirSync(backupDir, {mode : 'r+'});
         }
 
-        var tastList = mList.splice(0, tastSize);
+        var tastList = mList.splice(0, tastSize), appendContent = '';
         tastList.forEach(function(v){
-            if(!fs.existsSync(fileName)){
-
-                fs.writeFileSync(fileName, v + '\r\n');
-            } else {
-
-                fs.appendFileSync(fileName, v + '\r\n');
-            }
+            appendContent +=  v + '\r\n';
         });
 
         if( i == taskAmount ) {
             mList.splice(0, remainSize).forEach(function(v){
-                fs.appendFileSync(fileName, v + '\r\n');
+                appendContent +=  v + '\r\n';
             });
         }
+
+        fs.writeFileSync(fileName,appendContent );
 
         // >>node.log 2>&1  &
         spawn('node', ["index", random(), startIndex, excuteType, i]).stdout.on('data', function (stdout) {
