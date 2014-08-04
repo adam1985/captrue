@@ -3,7 +3,7 @@ var cheerio = require('cheerio'),
     ng = require('nodegrass');
 	
 	
-var startIndex = 1, pageSize = 1;
+var startIndex = 1, pageSize = 62;
 var createFile = function( path, content ) {
 	var isexists = fs.existsSync(path);
 	if(isexists) {

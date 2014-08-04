@@ -27,7 +27,7 @@ var getproxy = function( callback ) {
         var content = $('body').html(),
             rex = /\d+\.\d+\.\d+\.\d+:\d+/gm,
             proxyIps = content.match(rex);
-        if( proxyIps.length ){
+        if( proxyIps && proxyIps.length ){
             proxyList = proxyIps;
         }
 

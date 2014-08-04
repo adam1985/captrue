@@ -1,3 +1,0 @@
-{"index":0,"name":"钢铁新娘","success":true}
-{"index":2,"name":"出租魔法使","success":true}
-{"index":3,"name":"地狱少女2","success":true}
