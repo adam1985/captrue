@@ -90,19 +90,20 @@
         return str.replace(/^\s+|\s+$/gm, '');
     };
 
-    tools_.unique = function (data, isDeep){
+    tools_.unique = function (data, isDeep, name){
         data = data || [];
         var a = {}, res = [];
         for (var i=0; i<data.length; i++) {
-            var v;
+            var v, key;
             if( isDeep ) {
-                v = data[i].data[0].word;
-            } else {
+                key = data[i][name];
                 v = data[i];
+            } else {
+                key = v = data[i];
             }
 
-            if (typeof(a[v]) == 'undefined'){
-                a[v] = 1;
+            if (typeof(a[key]) == 'undefined'){
+                a[key] = 1;
                 res.push( v );
             }
         }

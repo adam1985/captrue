@@ -13,7 +13,7 @@ var createFile = function( path, content ) {
 	
 };
 
-var areas = ['北京'];
+var areas = ['广东'];
 var  Operators = ['电信,联通,移动'];
 
 

@@ -25,8 +25,8 @@ var createLoger = function( path, data, mnameIndex, isInit ) {
 };
 
 var getPrevLoger = function(path){
+    var infos = [], prevDef = {endIndex : 0};
     if( fs.existsSync( path ) ) {
-        var infos = [], prevDef = {endIndex : 0};
 
         var logerListStr = fs.readFileSync( path ).toString();
 

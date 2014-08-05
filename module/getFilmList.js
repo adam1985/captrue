@@ -6,31 +6,35 @@ var nodeCsv = require('node-csv'),
 
 
 var getFilmList = function( workPath, cb, type){
-     var objState = {}, resList = [], mlist = [], againIndex;
-     if( type == 'again' ) {
-         var successList = readJson(workPath + 'success.txt');
-         var noneresList = readJson(workPath + 'noneres.txt');
-         var readyList = readyList.concat(successList, noneresList);
-         readyList = readyList.sort(function(a, b){return a.index - b.index });
-         againIndex = readyList[readyList.length-1].index;
+     var objState = {}, resList = [], mlist = [], readyList = [], againIndex, dirPath = workPath + 'data/';
 
-         readyList.forEach(function(v){
-             objState[tools.trim(v)] = 1;
-         });
-     }
+    readJson(dirPath + 'success.txt', function( successList ){
+        readJson(dirPath + 'success.txt', function( noneresList ){
+            if( type == 'again' ) {
+                readyList = readyList.concat(successList, noneresList);
+                readyList = readyList.sort(function(a, b){return a.index - b.index });
+                againIndex = readyList[readyList.length-1].index;
 
-     lineReader.eachLine(workPath + 'filmlist.txt', function(line) {
-         mlist.push( tools.trim(line));
-     }).then(function () {
-         mlist.forEach(function(v, i){
-             var filmName = tools.trim(v);
-             if( filmName && !objState[filmName]) {
-                 resList.push( filmName );
-             }
-         });
+                readyList.forEach(function(v){
+                    objState[tools.trim(v.name)] = 1;
+                });
+            }
 
-         cb && cb( resList, againIndex );
-     });
+            readJson(workPath + 'filmlist.txt', function( mlist ){
+                mlist.forEach(function(v){
+                    var filmName = tools.trim(v.name);
+                    if( filmName && !objState[filmName]) {
+                        resList.push( v );
+                    }
+                });
+
+                cb && cb( resList, againIndex );
+
+            }, 'json');
+
+        }, 'json');
+
+    }, 'json');
  };
 
 module.exports = getFilmList;

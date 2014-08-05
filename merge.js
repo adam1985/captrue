@@ -34,7 +34,7 @@ var inArray = function(arr, val){
 };
 
 
-var dirExp = /create\/\d+\/data/;
+var dirExp = /create\W\d+\Wdata/;
 
 function mergeInterface (dirname, filelists, cb) {
     var arg = arguments, count = 0;
@@ -68,10 +68,11 @@ function mergeInterface (dirname, filelists, cb) {
                                         });
 
                                         readyList.forEach(function(v, i){
-                                            if( i == 0 || fs.existsSync( dirPath + basename ) ){
-                                                fs.writeFileSync(dirPath + basename, v + '\r\n');
+                                            console.log(fs.existsSync( dirPath + basename ));
+                                            if( i == 0 || !fs.existsSync( dirPath + basename ) ){
+                                                fs.writeFileSync(dirPath + basename, JSON.stringify(v) + '\r\n');
                                             } else {
-                                                fs.appendFileSync(dirPath + basename, v + '\r\n');
+                                                fs.appendFileSync(dirPath + basename, JSON.stringify(v) + '\r\n');
                                             }
                                         });
 
@@ -89,8 +90,13 @@ function mergeInterface (dirname, filelists, cb) {
     });
 }
 
+console.log('开始合并接口文件');
 mergeInterface(dirPath, args, function(){
-    console.log('接口文件合并结束!');
+
+});
+
+process.on('exit',function(){
+    console.log('接口文件合并完成!');
 });
 
 
