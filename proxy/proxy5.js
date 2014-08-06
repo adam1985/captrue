@@ -3,7 +3,7 @@ var cheerio = require('cheerio'),
     ng = require('nodegrass');
 
 
-var startIndex = 1, pageSize = 38;
+var startIndex = 1, pageSize = 5;
 var createFile = function( path, content ) {
     var isexists = fs.existsSync(path);
     if(isexists) {
@@ -57,6 +57,7 @@ var getproxy = function( callback ) {
             }, {
                 "User-Agent" : "chrome"
             }).on('error', function(e) {
+                startIndex++;
                 args.callee();
             });
         } else {

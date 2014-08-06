@@ -59,6 +59,7 @@ var getproxy = function( callback ) {
                 args.callee();
 
             }).on('error', function(e) {
+                startIndex++;
                 args.callee();
             });
         } else {

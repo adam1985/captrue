@@ -193,7 +193,7 @@ openBaiduIndex([
     }
 ]);
 
-page.onError = function(msg, trace) {
+/*page.onError = function(msg, trace) {
     console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
     page.close();
     phantom.exit();
@@ -203,7 +203,7 @@ phantom.onError = function(msg, trace) {
     console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
     page.close();
     phantom.exit();
-};
+};*/
 
 /*
 page.onResourceError = function(){

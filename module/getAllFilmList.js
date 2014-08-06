@@ -20,17 +20,19 @@ var mlist = [], dirPath = './create/';
                              filmName = tools.trim(data[5]);
                          if( filmName && !objState[filmName] ) {
                              mlist.push({
-                                 index : filmIndex,
                                  type : filmType,
                                  name : filmName
 
                              });
-                             filmIndex++;
                          }
                      }
                  }
              }).on('end', function() {
-                 cb && cb( tools.unique(mlist, true, 'name') );
+                 mlist = tools.unique(mlist, true, 'name');
+                 mlist.forEach(function(v, i){
+                     mlist[i].index = i;
+                 });
+                 cb && cb( mlist );
              });
          }, 'json');
 

@@ -17,8 +17,21 @@ var sys = require('sys'),
 var dirPath = './create/',
     backupPath = './backup/';
 
-var proxyIpArr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
-    proxyIpIndex = 0;
+var proxyIpRange = {start : 1, end : 46},
+    filterIpObj = {
+        "4" : 1,
+        "5" : 1,
+        "11" : 1,
+        "12" : 1
+    },
+    proxyIpArr = [];
+
+for(var i = proxyIpRange.start; i <= proxyIpRange.end; i++ ){
+    if( !filterIpObj[i] ) {
+        proxyIpArr.push(i);
+    }
+
+}
 
 var random = function(){
     var len = proxyIpArr.length;
@@ -61,13 +74,29 @@ var appLoger = function( message, data ){
 
 };
 
+var interfaceMerge = function(){
+    var worker = fork('merge.js', ['success', 'noneres', 'baiduindex'], {silent:true});
+    // 监听子进程exit事件
+    worker.on('exit',function(){
+        appLoger('接口文件合并完成，主进程将退出!');
+        console.log('接口文件合并完成，主进程将退出!');
+    });
+
+    worker.stdout.on('data', function (stdout) {
+        console.log(stdout.toString());
+    });
+
+};
+
 //保存被子进程实例数组
 var workers = {};
 //这里的被子进程理论上可以无限多
 var appsPath = [];
+var taskState = {};
 var createWorker = function(appPath){
 
     appPath.args[0] = random();
+    var len = appPath.args.length;
     //保存fork返回的进程实例
     var worker = fork(appPath.path, appPath.args, {silent:true});
     //监听子进程exit事件
@@ -75,14 +104,38 @@ var createWorker = function(appPath){
         console.log('worker:' + worker.pid + 'exited');
         appLoger('worker:' + worker.pid + 'exited', appPath.args);
 
-        delete workers[worker.pid];
-        appPath.args[0] = random();
-        appPath.args[1] = -1;
-        createWorker(appPath);
+        if( !taskState[appPath.args[len-1]] ) {
+            delete workers[worker.pid];
+            appPath.args[0] = random();
+            appPath.args[1] = -1;
+            createWorker(appPath);
+        }
+
     });
 
     worker.stdout.on('data', function (stdout) {
-        console.log(stdout.toString());
+        stdout = stdout.toString();
+        var jsonContent;
+        try {
+            jsonContent = JSON.parse( tools.trim( stdout ) );
+        } catch  (e){
+
+        }
+
+        if( jsonContent && jsonContent.complete ){
+            taskState[appPath.args[len-1]] = 1;
+            appLoger('任务已完成:' + appPath.args[len-1], appPath.args);
+            workers[worker.pid].kill();
+            delete workers[worker.pid];
+            var workerNum = Object.keys( worker).length;
+            if( workerNum == 0 ) {
+                interfaceMerge();
+                appLoger('app主程序已退出!');
+            }
+        }
+
+        console.log(stdout);
+
     });
 
     workers[worker.pid] = worker;
@@ -108,6 +161,7 @@ var startWorder = function() {
         for(var pid in workers){
             workers[pid].kill();
         }
+        console.log('强行退出，或者任务执行完成!');
     });
 
     console.log('已经启动服务，数据正在抓取!');
@@ -118,10 +172,11 @@ if( restart ) {
         var filmType = tools.trim(data[4]);
         return true;
     }, function(mList){
+        mList = mList.slice(0 , 50);
         console.log('正在分配任务，请稍后...');
         console.log('总共有' + ( mList.length ) + '个影片关键词!');
         var tastSize = parseInt(mList.length / taskAmount),
-            remainSize = mList % taskAmount,
+            remainSize = mList.length % taskAmount,
             filmPath = dirPath + 'filmlist.txt';
 
         if(  startIndex == 0 ) {
