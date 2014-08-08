@@ -174,7 +174,7 @@ if( restart ) {
         var filmType = tools.trim(data[4]);
         return true;
     }, function(mList){
-        mList = mList.slice(0 , 50);
+        //mList = mList.slice(0 , 50);
         console.log('正在分配任务，请稍后...');
         console.log('总共有' + ( mList.length ) + '个影片关键词!');
         var tastSize = parseInt(mList.length / taskAmount),
