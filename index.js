@@ -326,7 +326,12 @@ var captureLoger = function( data, path, isSuccess, cb){
                         logerStr += JSON.stringify( v ) + '\r\n';
                     }
                 });
-                fs.writeFileSync(failPath, logerStr);
+                if( logerStr ) {
+                    fs.writeFileSync(failPath, logerStr);
+                } else {
+                    fs.unlinkSync(failPath);
+                }
+
             }, 'json');
 
         }

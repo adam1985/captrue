@@ -85,7 +85,6 @@ var interfaceMerge = function(){
     worker.stdout.on('data', function (stdout) {
         console.log(stdout.toString());
     });
-
 };
 
 //保存被子进程实例数组
@@ -119,13 +118,14 @@ var createWorker = function(appPath){
         if( stdout.indexOf('所有影片数据成功抓取') != -1  ){
             taskState[appPath.args[len-1]] = 1;
             appLoger('任务已完成:' + appPath.args[len-1], appPath.args);
-            workers[worker.pid].kill();
             delete workers[worker.pid];
-            var workerNum = Object.keys( worker).length;
+            var workerNum = Object.keys( workers ).length;
             if( workerNum == 0 ) {
                 interfaceMerge();
                 appLoger('app主程序已退出!');
             }
+            worker.kill();
+
         }
 
         console.log(stdout);
