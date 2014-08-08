@@ -1,1 +1,0 @@
-{"startIndex":0,"endIndex":1,"excuteNum":1,"startTime":"2014-08-06 17:02:17","endTime":"2014-08-06 17:06:38","dur":"4分21秒","average":"4分21秒","length":2,"proxyIp":"124.231.3.182:8088","usedIpIndex":13,"sucessNum":0,"failNum":2,"noneresNum":0}

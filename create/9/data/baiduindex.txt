@@ -1,7 +1,0 @@
-NULL	下一个就是你	sex	female	33	33
-NULL	下一个就是你	sex	male	67	67
-NULL	下一个就是你	age	19岁及以下	14	14
-NULL	下一个就是你	age	20~29岁	41	41
-NULL	下一个就是你	age	30~39岁	33	33
-NULL	下一个就是你	age	40~49岁	9	9
-NULL	下一个就是你	age	50岁及以上	3	3

@@ -16,20 +16,15 @@ phantom.addCookie({
     'path'  : '/'
 });
 
-var timeout = 30 * 1000;
+var timeout = 30 * 1000, dtimeout = 45 * 1000;
 
 page.settings.resourceTimeout = timeout;
 
-//抓取接口文件
-var captrueInterface = function( config, callback ) {
-    var interfacePath = 'http://index.baidu.com/Interface/';
+var baiduIndexContents = [], interfaceList = [], interfaceMsgs = [];
 
-        var postParamStr = page.evaluate(function() {
-            return {
-                res : PPval.ppt,
-                res2 : PPval.res2
-            };
-        });
+//抓取接口文件
+var captrueInterface = function( config, callback, postParamStr ) {
+    var interfacePath = 'http://index.baidu.com/Interface/';
 
         var index = 0, len = config.interfaces.length;
 
@@ -54,7 +49,7 @@ var captrueInterface = function( config, callback ) {
                         try{
                             contentJson = JSON.parse( content );
                         } catch ( e ) {
-                            console.log(JSON.stringify({index : filmIndex,success : false, msg : 'interface capture fail!'}));
+                            console.log(JSON.stringify({index : filmIndex,success : false, msg : 'interface capture json parse error'}));
 
                             page.close();
                             phantom.exit();
@@ -62,16 +57,11 @@ var captrueInterface = function( config, callback ) {
 
                         if( contentJson.data && contentJson.data.length ) {
 
-                            var isComplete = ( index === len - 1 ),
-                                resJson = {
-                                    index : filmIndex,
-                                    success : true,
-                                    content : content,
-                                    face : key,
-                                    msg : key + '.json interface suceess capture!'
-                                };
+                            var isComplete = ( index === len - 1 );
 
-                            console.log(JSON.stringify(resJson));
+                            baiduIndexContents.push(base64.encode(content));
+                            interfaceList.push(key);
+                            interfaceMsgs.push(key + '.json interface suceess capture!');
 
                             if( isComplete ) {
                                 page.close();
@@ -84,7 +74,7 @@ var captrueInterface = function( config, callback ) {
 
                         } else {
 
-                            console.log(JSON.stringify({index : filmIndex, success : false,msg : 'interface capture fail!'}));
+                            console.log(JSON.stringify({index : filmIndex, success : false,msg : 'interface capture json bad!'}));
 
                             page.close();
                             phantom.exit();
@@ -122,6 +112,13 @@ var openBaiduIndex = function( settings ) {
 
                     if( status === 'success') {
 
+                        var postParamStr = page.evaluate(function() {
+                            return {
+                                res : PPval.ppt,
+                                res2 : PPval.res2
+                            };
+                        });
+
                         var isResult = page.evaluate(function () {
                             var worlds = ['立即购买', '未被收录'],
                                 _isResult = true,
@@ -153,7 +150,7 @@ var openBaiduIndex = function( settings ) {
                                 // 生成接口文件
                                 captrueInterface( pageCof, function(){
                                     arg.callee();
-                                } );
+                                }, postParamStr );
                             } else {
                                 console.log(JSON.stringify({index : filmIndex, noneres : true, success : false,msg : 'keyword none result!!!'}));
                                 page.close();
@@ -163,7 +160,7 @@ var openBaiduIndex = function( settings ) {
 
                     } else {
 
-                        console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
+                        console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface open timeout!'}));
 
                         page.close();
                         phantom.exit();
@@ -171,7 +168,18 @@ var openBaiduIndex = function( settings ) {
 
                 });
             } else {
-                console.log(JSON.stringify({index : filmIndex, complete : true, msg : 'interface capture complate!'}));
+
+                if( baiduIndexContents.length) {
+                    var resJson = {
+                        index : filmIndex,
+                        success : true,
+                        content : baiduIndexContents,
+                        face : interfaceList,
+                        msg : interfaceMsgs
+                    };
+                    console.log(JSON.stringify(resJson));
+                }
+
 				page.close();
                 phantom.exit();
             }
@@ -214,17 +222,17 @@ page.onResourceError = function(){
 */
 
 page.onResourceTimeout = function(){
-    console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
+    console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture timeout1!'}));
     page.close();
     phantom.exit();
 };
 
 setTimeout(function(){
-     console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
+     console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture timeout2!'}));
      page.close();
      phantom.exit();
 
- }, timeout);
+ }, dtimeout);
 
 
 

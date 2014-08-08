@@ -115,14 +115,8 @@ var createWorker = function(appPath){
 
     worker.stdout.on('data', function (stdout) {
         stdout = stdout.toString();
-        var jsonContent;
-        try {
-            jsonContent = JSON.parse( tools.trim( stdout ) );
-        } catch  (e){
 
-        }
-
-        if( jsonContent && jsonContent.complete ){
+        if( stdout.indexOf('所有影片数据成功抓取') != -1  ){
             taskState[appPath.args[len-1]] = 1;
             appLoger('任务已完成:' + appPath.args[len-1], appPath.args);
             workers[worker.pid].kill();
@@ -152,9 +146,17 @@ var startWorder = function() {
         });
     }
     //启动所有子进程
-    for (var n = appsPath.length - 1; n >= 0; n--) {
-        createWorker(appsPath[n]);
-    }
+    var taskIndex = 0;
+    (function(){
+        var args = arguments;
+        if( taskIndex < appsPath.length ) {
+            createWorker(appsPath[taskIndex]);
+            taskIndex++;
+            setTimeout(function(){
+                args.callee();
+            }, 500);
+        }
+    }());
 
     //父进程退出时杀死所有子进程
     process.on('exit',function(){
@@ -179,7 +181,7 @@ if( restart ) {
             remainSize = mList.length % taskAmount,
             filmPath = dirPath + 'filmlist.txt';
 
-        if(  startIndex == 0 ) {
+        /*if(  startIndex == 0 ) {
             if( fs.existsSync( filmPath ) ){
                 fs.unlinkSync( filmPath );
             }
@@ -191,51 +193,59 @@ if( restart ) {
             } else {
                 fs.appendFileSync(filmPath, JSON.stringify(v) + '\r\n');
             }
-        });
+        });*/
 
-        for(var i = 1; i <= taskAmount; i++){
+        var childTaskIndex = 1;
+        (function(){
+            var args = arguments;
+            if( childTaskIndex <= taskAmount ) {
+                var tastName = dirPath + childTaskIndex,
+                    dataDir = tastName + '/data',
+                    backupDir = tastName + '/backup',
+                    fileName = tastName + '/filmlist.txt';
 
-            var tastName = dirPath + i,
-                dataDir = tastName + '/data',
-                backupDir = tastName + '/backup',
-                fileName = tastName + '/filmlist.txt';
-
-            if(  startIndex == 0 ) {
-                if( fs.existsSync( fileName ) ){
-                    fs.unlinkSync( fileName );
+                if(  startIndex == 0 ) {
+                    if( fs.existsSync( fileName ) ){
+                        //fs.unlinkSync( fileName );
+                    }
                 }
-            }
 
-            if( !fs.existsSync(tastName) ){
-                //spawn('mkdir',[tastName]);
-                //spawn('mkdir',[dataDir]);
-                //spawn('mkdir',[backupDir]);
-                fs.mkdirSync(tastName);
-                fs.mkdirSync(dataDir);
-                fs.mkdirSync(backupDir);
-            }
+                if( !fs.existsSync(tastName) ){
+                    //spawn('mkdir',[tastName]);
+                    //spawn('mkdir',[dataDir]);
+                    //spawn('mkdir',[backupDir]);
+                    fs.mkdirSync(tastName);
+                    fs.mkdirSync(dataDir);
+                    //fs.mkdirSync(backupDir);
+                }
 
-            var tastList = mList.splice(0, tastSize), appendContent = '';
-            tastList.forEach(function(v){
-                appendContent +=  JSON.stringify(v) + '\r\n';
-            });
-
-            if( i == taskAmount ) {
-                mList.splice(0, remainSize).forEach(function(v){
+                var tastList = mList.splice(0, tastSize), appendContent = '';
+                tastList.forEach(function(v){
                     appendContent +=  JSON.stringify(v) + '\r\n';
                 });
+
+                if( childTaskIndex == taskAmount ) {
+                    mList.splice(0, remainSize).forEach(function(v){
+                        appendContent +=  JSON.stringify(v) + '\r\n';
+                    });
+                }
+
+                fs.writeFileSync( fileName,appendContent );
+
+                childTaskIndex++;
+                setTimeout(function(){
+                    args.callee();
+                }, 500);
+
+                // >>node.log 2>&1  &
+                /*spawn('node', ["index", random(), startIndex, excuteType, i]).stdout.on('data', function (stdout) {
+                 console.log(stdout.toString());
+                 });*/
+            } else {
+                startWorder();
             }
+        }());
 
-            fs.writeFileSync(fileName,appendContent );
-
-            // >>node.log 2>&1  &
-            /*spawn('node', ["index", random(), startIndex, excuteType, i]).stdout.on('data', function (stdout) {
-             console.log(stdout.toString());
-             });*/
-
-        }
-
-        startWorder();
 
     });
 } else {

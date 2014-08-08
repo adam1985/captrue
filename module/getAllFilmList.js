@@ -6,7 +6,6 @@ var mlist = [], dirPath = './create/';
  var getAllFilmList = function( path, filter , cb){
      var objState = {}, readyList = [], filmIndex = 0;
 
-
      readJson(dirPath + 'success.txt', function( successList ){
          readJson(dirPath + 'noneres.txt', function( noneresList ){
              readyList = readyList.concat(successList, noneresList);
@@ -22,7 +21,6 @@ var mlist = [], dirPath = './create/';
                              mlist.push({
                                  type : filmType,
                                  name : filmName
-
                              });
                          }
                      }

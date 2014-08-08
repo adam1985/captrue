@@ -1,2 +1,0 @@
-{"index":32,"name":"圣诞怪杰","success":false,"type":"电影"}
-{"index":33,"name":"王牌售车员","success":false,"type":"电影"}

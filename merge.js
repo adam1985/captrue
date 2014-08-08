@@ -68,8 +68,7 @@ function mergeInterface (dirname, filelists, cb) {
                                         });
 
                                         readyList.forEach(function(v, i){
-                                            console.log(fs.existsSync( dirPath + basename ));
-                                            if( i == 0 || !fs.existsSync( dirPath + basename ) ){
+                                            if( !fs.existsSync( dirPath + basename ) ){
                                                 fs.writeFileSync(dirPath + basename, JSON.stringify(v) + '\r\n');
                                             } else {
                                                 fs.appendFileSync(dirPath + basename, JSON.stringify(v) + '\r\n');
