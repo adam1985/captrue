@@ -114,8 +114,12 @@ var createWorker = function(appPath){
 
     worker.stdout.on('data', function (stdout) {
         stdout = stdout.toString();
+        console.log(stdout);
 
-        if( stdout.indexOf('所有影片数据成功抓取') != -1  ){
+    });
+
+    worker.on('message', function(res){
+        if( res.complete  ){
             taskState[appPath.args[len-1]] = 1;
             appLoger('任务已完成:' + appPath.args[len-1], appPath.args);
             delete workers[worker.pid];
@@ -125,11 +129,7 @@ var createWorker = function(appPath){
                 appLoger('app主程序已退出!');
             }
             worker.kill();
-
         }
-
-        console.log(stdout);
-
     });
 
     workers[worker.pid] = worker;
@@ -174,7 +174,7 @@ if( restart ) {
         var filmType = tools.trim(data[4]);
         return true;
     }, function(mList){
-        //mList = mList.slice(0 , 50);
+        mList = mList.slice(0 , 50);
         console.log('正在分配任务，请稍后...');
         console.log('总共有' + ( mList.length ) + '个影片关键词!');
         var tastSize = parseInt(mList.length / taskAmount),

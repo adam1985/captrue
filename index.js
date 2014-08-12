@@ -671,7 +671,7 @@ var excuteExec = function(){
                         });
 
                         phantom.on('exit', function (code,signal) {
-                            phantom.kill(signal);
+                            //phantom.kill(signal);
                             console.log('[' + mnameIndex + '-' + usedIpIndex + ']'+proxyIp+':进程结束，将重新启动抓取!');
                             if( !phantomStete[mnameIndex + '_' + usedIpIndex] ) {
                                 phantomStete[mnameIndex + '_' + usedIpIndex] = 1;
@@ -725,17 +725,21 @@ var repairFailList = function() {
             if( len > 0) {
                 excuteExec();
             } else {
-                console.log(JSON.stringify({msg : "所有影片数据成功抓取!", complete : true}));
+                process.send({complete : true});
+                console.log("所有影片数据成功抓取!");
                 //process.kill(nodePid);
             }
         } else {
 
-            console.log(JSON.stringify({msg : "所有影片数据成功抓取!", complete : true}));
+            process.send({ complete : true});
+            console.log("所有影片数据成功抓取!");
             //process.kill(nodePid);
         }
     }, 'json');
 
 };
+
+
 
 // 抓取代理ip
 console.log('初始化之后，开始抓取代理:' + targetProxy);

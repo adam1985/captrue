@@ -23,7 +23,7 @@ page.settings.resourceTimeout = timeout;
 var baiduIndexContents = [], interfaceList = [], interfaceMsgs = [];
 
 //抓取接口文件
-var captrueInterface = function( config, callback, postParamStr ) {
+var captrueInterface = function( config, callback, postParam ) {
     var interfacePath = 'http://index.baidu.com/Interface/';
 
         var index = 0, len = config.interfaces.length;
@@ -34,7 +34,7 @@ var captrueInterface = function( config, callback, postParamStr ) {
                     targetObj = config.interfaces[index],
                     key = Object.keys(targetObj)[0],
                     val = targetObj[key],
-                    postUrl = interfacePath + val + '?' + $.param( postParamStr );
+                    postUrl = interfacePath + val + '?' + $.param( postParam );
 
                 page.open(postUrl, function (status) {
 
@@ -101,7 +101,7 @@ var captrueInterface = function( config, callback, postParamStr ) {
 var captureIndex = 0;
 var openBaiduIndex = function( settings ) {
     settings  = settings || [];
-    var length = settings.length;
+    var length = settings.length, postParam;
     if( length ){
         (function(){
             var arg = arguments;
@@ -111,13 +111,18 @@ var openBaiduIndex = function( settings ) {
                 page.open(pageCof.url + fileName, function(status) {
 
                     if( status === 'success') {
+                        (function(){
+                            postParam = page.evaluate(function() {
+                                return {
+                                    res : PPval.ppt,
+                                    res2 : PPval.res2
+                                };
+                            });
+                            if( !postParam.res || !postParam.res2 ) {
+                                arguments.callee();
+                            }
+                        }());
 
-                        var postParamStr = page.evaluate(function() {
-                            return {
-                                res : PPval.ppt,
-                                res2 : PPval.res2
-                            };
-                        });
 
                         var isResult = page.evaluate(function () {
                             var worlds = ['立即购买', '未被收录'],
@@ -150,7 +155,7 @@ var openBaiduIndex = function( settings ) {
                                 // 生成接口文件
                                 captrueInterface( pageCof, function(){
                                     arg.callee();
-                                }, postParamStr );
+                                }, postParam );
                             } else {
                                 console.log(JSON.stringify({index : filmIndex, noneres : true, success : false,msg : 'keyword none result!!!'}));
                                 page.close();
