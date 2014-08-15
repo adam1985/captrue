@@ -5,8 +5,8 @@ var base64 =  require('./module/base64.js');
 var $ = require('./module/jquery-2.1.1.min');
 
 
-var filmIndex = sys.args[1],
-    fileName = base64.decode(sys.args[2]);
+var filmIndex = 0,
+    fileName = base64.decode('JUQzJUM0JUMxJUU5JUQ2JUQ1JUJEJUUxJUQ1JURG');
 
 // 百度指数必需的核心cookie，登陆百度帐号后获取
 phantom.addCookie({
@@ -64,7 +64,7 @@ var captrueInterface = function( config, callback, postParam ) {
                         interfaceMsgs.push(key + '.json interface suceess capture!');
 
                         if( isComplete ) {
-                            //page.close();
+                            page.close();
                             callback && callback();
                         }
 
@@ -113,10 +113,14 @@ var openBaiduIndex = function( settings ) {
                     if( status === 'success') {
                         (function(){
                             postParam = page.evaluate(function() {
-                                return {
-                                    res : PPval.ppt,
-                                    res2 : PPval.res2
-                                };
+                                var obj = {};
+                                try{
+                                    obj.res = PPval.ppt;
+                                    obj.res2 = PPval.res2;
+                                } catch (e){
+
+                                }
+                                return obj;
                             });
                             if( !postParam.res || !postParam.res2 ) {
                                 arguments.callee();
@@ -205,26 +209,6 @@ openBaiduIndex([
         ]
     }
 ]);
-
-/*page.onError = function(msg, trace) {
-     console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
-     page.close();
-     phantom.exit();
- };
-
- phantom.onError = function(msg, trace) {
-     console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
-     page.close();
-     phantom.exit();
- };*/
-
-/*
- page.onResourceError = function(){
-     console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture fail!'}));
-     page.close();
-     phantom.exit();
- };
- */
 
 page.onResourceTimeout = function(){
     console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface capture timeout1!'}));

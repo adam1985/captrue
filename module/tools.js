@@ -111,4 +111,22 @@
         return res;
     };
 
+
+    tools_.inArray = function(arr, val, isDeep){
+        var _inArray = false;
+        arr.forEach(function(v){
+            var name;
+            if( isDeep) {
+                name = v.name;
+            } else {
+                name = v;
+            }
+            if( val.indexOf( name ) != -1 ) {
+                _inArray = true;
+            }
+        });
+
+        return _inArray;
+    };
+
     module.exports = tools_ ;

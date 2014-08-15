@@ -1,6 +1,6 @@
 /**
  * 使用命令
- *  node index [proxyIndex] [startIndex] [excuteType] [taskIndex]
+ *  node index [startIndex] [excuteType] [taskIndex]
  *
  */
 
@@ -38,36 +38,22 @@ var getDefaultArg = function(arg, defaultArg) {
 
 var arguments = process.argv.splice(2);
 
-if( arguments.length < 4 ){
-    throw new Error('至少需要四个参数');
+if( arguments.length < 3 ){
+    throw new Error('至少需要三个参数');
 }
 
 
-var proxyIpRange = {start : 1, end : 46},
-    filterIpObj = {
-        "4" : 1,
-        "5" : 1,
-        "11" : 1,
-        "12" : 1
-    },
-    proxyIpArr = [];
 
-for(var i = proxyIpRange.start; i <= proxyIpRange.end; i++ ){
-    if( !filterIpObj[i] ) {
-        proxyIpArr.push(i);
-    }
-
-}
-
-var proxyIpIndex = parseInt(arguments[0]);
-
-var targetProxy = proxyIpArr[proxyIpIndex],
-    startIndex = parseInt(arguments[1]),
-    excuteType = arguments[2],
-    taskIndex = parseInt(arguments[3]);
+var startIndex = parseInt(arguments[0]),
+    excuteType = arguments[1],
+    taskIndex = parseInt(arguments[2]);
 
 
 var dirPath = './create/',
+    proxyPath = __dirname + '/ip/',
+    formalPath =  proxyPath + 'formal.txt',
+    successProxyPath = proxyPath + 'success.txt',
+    failProxyPath = proxyPath + 'fail.txt',
     dataPath ,
     workPath,
     backupPath;
@@ -88,7 +74,6 @@ var failPath = dataPath + 'fail.txt',
     logerPath = dataPath + 'loger.txt',
     baiduindexFile = dataPath + 'baiduindex.txt';
 
-var proxy = require('./proxy/proxy' + targetProxy);
 
 var phantom,
     baiduindexContents = [],
@@ -387,91 +372,66 @@ var captureLoger = function( data, path, isSuccess, cb){
 
 };
 
-var readLocalProxy = function ( data ) {
-    if( !data || data.length === 0 ) {
-        var proxyIpStr = fs.readFileSync('ip.txt');
-        if(proxyIpStr){
-            proxyIps = JSON.parse(proxyIpStr);
-        }
-    } else {
-        proxyIps = data;
+
+var getProxyIp = function( index ){
+    if( index >= totalIplength ) {
+        usedIpIndex = 0;
     }
-
-    failProxyIpNum = 0;
-
-    totalIplength = proxyIps.length;
-    console.log('一共抓取了' + totalIplength + '个代理ip');
+    proxyIp = proxyIps[usedIpIndex].name;
 };
 
-var getProxyList = function(cb){
-    (function(){
-        var _args = arguments;
-        if( proxyIpIndex >= proxyIpArr.length ){
-            proxyIpIndex = 0;
+var appendFile = function( path, content ){
+    var isexists = fs.existsSync(path);
+    if(isexists) {
+        fs.appendFileSync(path, content);
+    } else {
+        fs.writeFileSync(path, content);
+    }
+};
+
+// 生成代理记录
+var createProxyLoger = function(path, name, type){
+    readJson(path, function(list){
+        if( !tools.inArray(list, name, true) ) {
+            appendFile(path, JSON.stringify({name : name, type : type}) + '\r\n');
         }
-
-        var targetProxyVal = proxyIpArr[++proxyIpIndex];
-
-        proxy = require('./proxy/proxy' + targetProxyVal);
-
-
-        console.log('开始抓取代理:' + targetProxyVal);
-        proxy.getproxy( function( data ){
-            readLocalProxy( data );
-
-            if( totalIplength > 0 ) {
-                cb && cb();
-            } else {
-                _args.callee();
-            }
-        });
-    }());
+    }, 'json');
 };
 
 
 // 测试代理ip是否连接正常
 var tcpTimeout = 30 * 1000, tcpLink;
-
-var startCapture = function(ip, success){
-    tcpLink && clearTimeout(tcpLink);
+var startCapture = function(ip, success, fail){
+    var arg = arguments;
     console.log('[' + mnameIndex + '-' + usedIpIndex + ']' + '"' + ip + '"正在检测ip是否连接正常!');
     var checkProxy = function(){
         try{
             var ipArr = ip.split(":");
             var client = net.createConnection(ipArr[1], ipArr[0]);
             client.on('connect', function () {
-
                 success();
-                //tcpLink && clearTimeout(tcpLink);
             });
             client.on('error', function(e){
                 console.log('[' + mnameIndex + '-' + usedIpIndex + ']' + '"' + ip + '"网络连接异常!');
-                failProxyIpNum++;
-                startCapture( proxyIps[usedIpIndex++], success);
-                //tcpLink && clearTimeout(tcpLink);
+                createProxyLoger(failProxyPath, ip, 'fail');
+                getProxyIp( ++usedIpIndex );
+                arg.callee( proxyIp, success);
             });
             client.on('timeout', function(e) {
                 console.log('[' + mnameIndex + '-' + usedIpIndex + ']' + '"' + ip + '"网络tcp连接超时!');
-                failProxyIpNum++;
-                startCapture( proxyIps[usedIpIndex++], success);
-                //fail();
-                //client.destroy();
+                createProxyLoger(failProxyPath, ip, 'fail');
+                getProxyIp( ++usedIpIndex );
+                arg.callee( proxyIp, success);
             });
         } catch (e){
             console.log('[' + mnameIndex + '-' + usedIpIndex + ']' + '"' + ip + '"ip或端口格式不对!!');
-            failProxyIpNum++;
-            startCapture( proxyIps[usedIpIndex++], success);
-            //tcpLink && clearTimeout(tcpLink);
+            createProxyLoger(failProxyPath, ip, 'fail');
+            getProxyIp( ++usedIpIndex );
+            arg.callee( proxyIp, success);
         }
     };
 
-    if( failProxyIpNum >= failProxyMount - 1 ) {
-        getProxyList(function(){
-            checkProxy();
-        });
-    } else {
-        checkProxy();
-    }
+    checkProxy();
 
 
 /*    tcpLink = setTimeout(function(){
@@ -502,11 +462,6 @@ var stdoutLoger = function( path, msg, successState, success, cb ){
         }
     }
 
-    if( success ){
-        failProxyIpNum = 0;
-    } else {
-        failProxyIpNum++;
-    }
 
     //phantom.stdin.end();
 
@@ -529,7 +484,7 @@ var excuteExec = function(){
 
                 var commandArray =[], eachCapture = function(proxyIps){
                     if( proxyIps ) {
-                        proxyIp = proxyIps[usedIpIndex];
+                        proxyIp = proxyIps[usedIpIndex].name;
                     }
 
                     startCapture(proxyIp, function(){
@@ -628,6 +583,7 @@ var excuteExec = function(){
                                             baiduindexContents.forEach(function(value){
                                                 createBaiduIndex( JSON.parse(tools.trim(base64.decode(value))).data, mnameIndex, mname );
                                             });
+                                            createProxyLoger(successProxyPath, proxyIp, 'success');
                                         });
 
                                     } else if( result.success === false ){
@@ -662,12 +618,12 @@ var excuteExec = function(){
                         });
 
                         phantom.on('close', function (code,signal) {
-                            phantom.kill(signal);
-                            phantom.stdin.end();
+                            //phantom.kill(signal);
+                            //phantom.stdin.end();
                         });
 
                         phantom.on('error',function(code,signal){
-                            phantom.kill(signal);
+                            //phantom.kill(signal);
                         });
 
                         phantom.on('exit', function (code,signal) {
@@ -680,23 +636,13 @@ var excuteExec = function(){
 
                         });
 
-                    }, function(){
-                        stdoutLoger(failPath, '网络连接异常!', false);
-
-                        arg.callee();
                     });
                 };
 
-                if(usedIpIndex >= totalIplength || failProxyIpNum >= failProxyMount - 1){
+                if(usedIpIndex >= totalIplength){
                     usedIpIndex = 0;
-
-                    getProxyList(function(){
-                        eachCapture( proxyIps );
-                    });
-
-                } else {
-                    eachCapture( proxyIps );
                 }
+                eachCapture( proxyIps );
             }
 
         } else {
@@ -740,31 +686,32 @@ var repairFailList = function() {
 };
 
 
-
 // 抓取代理ip
-console.log('初始化之后，开始抓取代理:' + targetProxy);
-proxy.getproxy( function( data ){
-    readLocalProxy( data );
+readJson(formalPath, function(proxyList){
+    proxyIps = proxyList || [];
+    totalIplength = proxyIps.length;
+    usedIpIndex = Math.floor(Math.random() * totalIplength);
 
-   if( excuteType ==  'repair') { // 修复模式
-       repairFailList();
-   } else if(excuteType ==  'again' || excuteType == 'restart') { // 读取csv
-       getFilmList(workPath, function(filmList, index){
-           if( index ) {
-               againIndex = index;
-           }
+    if( excuteType ==  'repair') { // 修复模式
+        repairFailList();
+    } else if(excuteType ==  'again' || excuteType == 'restart') { // 读取csv
+        getFilmList(workPath, function(filmList, index){
+            if( index ) {
+                againIndex = index;
+            }
 
-           mlist = filmList;
+            mlist = filmList;
 
-           len = mlist.length;
+            len = mlist.length;
 
-           console.log('一共有' + ( len ) + '个影片关键词待抓取!');
-           excuteExec();
+            console.log('一共有' + ( len ) + '个影片关键词待抓取!');
+            excuteExec();
 
-       }, excuteType);
+        }, excuteType);
 
-   }
-});
+    }
+}, 'json');
+
 
 
 

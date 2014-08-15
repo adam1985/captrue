@@ -17,27 +17,6 @@ var sys = require('sys'),
 var dirPath = './create/',
     backupPath = './backup/';
 
-var proxyIpRange = {start : 1, end : 46},
-    filterIpObj = {
-        "4" : 1,
-        "5" : 1,
-        "11" : 1,
-        "12" : 1
-    },
-    proxyIpArr = [];
-
-for(var i = proxyIpRange.start; i <= proxyIpRange.end; i++ ){
-    if( !filterIpObj[i] ) {
-        proxyIpArr.push(i);
-    }
-
-}
-
-var random = function(){
-    var len = proxyIpArr.length;
-    return Math.floor( Math.random() * len );
-};
-
 /**
  * 处理参数
  * @type {Array}
@@ -94,7 +73,6 @@ var appsPath = [];
 var taskState = {};
 var createWorker = function(appPath){
 
-    appPath.args[0] = random();
     var len = appPath.args.length;
     //保存fork返回的进程实例
     var worker = fork(appPath.path, appPath.args, {silent:true});
@@ -105,8 +83,7 @@ var createWorker = function(appPath){
 
         if( !taskState[appPath.args[len-1]] ) {
             delete workers[worker.pid];
-            appPath.args[0] = random();
-            appPath.args[1] = -1;
+            appPath.args[0] = -1;
             createWorker(appPath);
         }
 
@@ -142,7 +119,7 @@ var startWorder = function() {
     for(var i = 1; i <= taskAmount; i++){
         appsPath.push({
             path : './index.js',
-            args :  [random(), startIndex, excuteType, i]
+            args :  [startIndex, excuteType, i]
         });
     }
     //启动所有子进程
@@ -238,9 +215,7 @@ if( restart ) {
                 }, 500);
 
                 // >>node.log 2>&1  &
-                /*spawn('node', ["index", random(), startIndex, excuteType, i]).stdout.on('data', function (stdout) {
-                 console.log(stdout.toString());
-                 });*/
+
             } else {
                 startWorder();
             }

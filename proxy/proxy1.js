@@ -3,7 +3,7 @@ var cheerio = require('cheerio'),
     ng = require('nodegrass');
 	
 	
-var startIndex = 1, pageSize = 62;
+var startIndex = 1, pageSize = 20;
 var createFile = function( path, content ) {
 	var isexists = fs.existsSync(path);
 	if(isexists) {
@@ -37,7 +37,6 @@ var getproxy = function( callback ) {
 
                 if (startIndex === 1) {
                     createFile('ip.txt', JSON.stringify(proxyList));
-
                 } else {
                     var proxyIps = fs.readFileSync('ip.txt');
                     if (proxyIps) {

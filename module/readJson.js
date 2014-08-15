@@ -13,7 +13,6 @@ var readJson = function( path, cb, type ) {
                     try{
                         resList.push(JSON.parse(tools.trim(v)));
                     }catch (e){
-
                     }
                 });
             } else {
