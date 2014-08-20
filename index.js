@@ -217,7 +217,7 @@ console.log('开始抓取数据!');
 
 // 生成百度指数数据
 var baiduIndexState = {};
-var createBaiduIndex = function( data, mnameIndex, filmname ){
+var createBaiduIndex = function( interfaceContents, mnameIndex, filmname ){
 
     var config = {
         "1" : "19岁及以下",
@@ -233,19 +233,34 @@ var createBaiduIndex = function( data, mnameIndex, filmname ){
 
     logerState( successPath, filmname, function(isHasRecode){
         if( !baiduIndexState[filmname] && data.length >>> 0 ) {
-            var result = [], filmType = mlist[mnameIndex].type;
-            data.forEach(function(v){
-                var mname = v.word;
-                if( typeof v == 'object' ) {
-                    tools.each(v, function(key1, val1){
-                        if( typeof val1 == 'object' ){
-                            tools.each( val1, function(key2, val2){
-                                result.push( [filmType, mname, config[key1], config[key2], val2, val2].join('\t') + '\r\n');
+            var getSocial = [], interest = [], filmType = mlist[mnameIndex].type;
+
+            interfaceContents.forEach( function(value, key){
+                if( /getSocial/i.test(value.face) ) {
+                    value.data.forEach(function(v){
+                        var mname = v.word;
+                        if( typeof v == 'object' ) {
+                            tools.each(v, function(key1, val1){
+                                if( typeof val1 == 'object' ){
+                                    tools.each( val1, function(key2, val2){
+                                        getSocial.push( [filmType, mname, config[key1], config[key2], val2, val2].join('\t') + '\r\n');
+                                    });
+                                }
                             });
                         }
                     });
+                } else if( /interest/i.test(value.face) ) {
+                    tools.each(value.data, function(key, value){
+                        var mname = key;
+                        tools.each(value, function(i, val){
+                            var interestVal = val.split(',');
+                            interest.push( [filmType, mname, "兴趣分布", interestVal.shift(), interestVal.join(','), interestVal.join(',')].join('\t') + '\r\n');
+                        });
+                    });
                 }
             });
+
+            var result = [].concat(getSocial, interest);
 
             isExists = fs.existsSync(baiduindexFile);
 
@@ -580,9 +595,11 @@ var excuteExec = function(){
                                         baiduindexContents = result.content;
 
                                         stdoutLoger(successPath, '抓取完成', true, true, function(){
+                                            var interfaceContents = [];
                                             baiduindexContents.forEach(function(value){
-                                                createBaiduIndex( JSON.parse(tools.trim(base64.decode(value))).data, mnameIndex, mname );
+                                                interfaceContents.push( JSON.parse(tools.trim(base64.decode(value))));
                                             });
+                                            createBaiduIndex(interfaceContents, mnameIndex, mname );
                                             createProxyLoger(successProxyPath, proxyIp, 'success');
                                         });
 

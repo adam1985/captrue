@@ -55,11 +55,14 @@ var captrueInterface = function( config, callback, postParam ) {
                         phantom.exit();
                     }
 
-                    if( contentJson.data && contentJson.data.length ) {
+                    if( contentJson.data ) {
 
                         var isComplete = ( index === len - 1 );
 
-                        baiduIndexContents.push(base64.encode(content));
+                        baiduIndexContents.push(base64.encode(JSON.stringify({
+                            data : contentJson.data,
+                            face : key
+                        })));
                         interfaceList.push(key);
                         interfaceMsgs.push(key + '.json interface suceess capture!');
 
@@ -199,6 +202,9 @@ openBaiduIndex([
         url : 'http://index.baidu.com/?tpl=crowd&word=',
         index : filmIndex,
         interfaces : [
+            {
+                "Interest" : "Interest/getInterest/"
+            },
             {
                 "getSocial" : "Social/getSocial/"
             }

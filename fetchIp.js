@@ -28,12 +28,12 @@ var dateString = initTime.format("yyyyMMddhhmmss");
 
 var proxyIpRange = {start : 1, end : 46},
     excuteType = arguments[0],
-    dirname = arguments[1],
+    dirname = arguments[1] || dateString,
     startIndex = arguments[2] || proxyIpRange.start,
-    endIndex = arguments[3] || proxyIpRange.end;
-
-
-
+    endIndex = arguments[3] || proxyIpRange.end,
+    prevIndex = 0,
+    checkIndex = 0,
+    proxyIndex = 1;
 
 var typeState = {
         "0" : "fetch",
@@ -42,9 +42,13 @@ var typeState = {
     },
     convertType = function( type ){
         var _type = 0;
-        for(var i in typeState ){
-            if( type == typeState[i]){
-                _type = i;
+        if( /\d+/.test( type )) {
+            _type = parseInt( type );
+        } else {
+            for(var i in typeState ){
+                if( type == typeState[i]){
+                    _type = i;
+                }
             }
         }
         return _type;
@@ -58,8 +62,9 @@ var typeState = {
         }
     },
     type = convertType( excuteType ),
-    workPath = __dirname + '/ip/',
+    workPath = './ip/',
     onlinePath = workPath + 'online/',
+    copyPath = onlinePath,
     backupPath = workPath + 'backup/',
     targetPath;
 
@@ -68,15 +73,20 @@ var typeState = {
         spawn('mkdir', [targetPath]);
     } else {
         targetPath = workPath + 'dev/';
+
+        if( arguments[1] ) {
+            copyPath = workPath + arguments[1] + '/';
+        }
+
         if( fs.existsSync(targetPath) ) {
             spawn('mv', [targetPath, backupPath + 'dev_' + dateString] );
-        }
 
-        if( fs.existsSync(onlinePath)  ){
-            spawn('cp', ["-r", onlinePath, targetPath] );
+            //spawn('rm', ["-rf", targetPath] );
+        }
+        if( fs.existsSync(copyPath)  ){
+            spawn('cp', ["-r", copyPath, targetPath] );
         }
     }
-
 
 var sourcePath = targetPath + 'source.txt',
     verifyPath = targetPath + 'verify.txt',
@@ -85,19 +95,43 @@ var sourcePath = targetPath + 'source.txt',
     successPath = targetPath + 'success.txt',
     logerPath = targetPath + 'loger.txt';
 
-if( startIndex ==  -1 ) {
-    if( fs.existsSync(logerPath) ) {
-        var logerListStr = fs.readFileSync(logerPath).toString(),
-            logerListObj = JSON.parse( tools.trim(logerListStr)),
-            prevProxyIndex = logerListObj.proxyIndex,
-            prevIndex = logerListObj.index;
-        startIndex = prevProxyIndex;
-    } else {
-        startIndex = 0;
-    }
-}
 
-var proxyIndex = startIndex;
+    if( startIndex ==  -1 ) {
+        if( fs.existsSync(logerPath) ) {
+            var logerListStr = fs.readFileSync(logerPath).toString(),
+                logerListObj = JSON.parse( tools.trim(logerListStr));
+
+            prevIndex = logerListObj.index || 0;
+            if( !logerListObj.proxyIndex || logerListObj.proxyIndex == -1 ) {
+                startIndex = 1;
+            } else {
+                startIndex = logerListObj.proxyIndex;
+            }
+
+        } else {
+            startIndex = 1;
+        }
+    }
+
+
+    proxyIndex = startIndex;
+    checkIndex = prevIndex;
+
+    if( type == 1 && startIndex != -1 ) {
+        checkIndex = 0;
+    }
+
+    // 重写console.log方法
+    console.log = (function(){
+        var _log = console.log;
+        return function(){
+            var now = new Date(),
+                args = [].slice.call(arguments, 0);
+            args.unshift("[proxy:" + proxyIndex, ",index:" + checkIndex + "]");
+            args.push( '时间:' + now.format("hh:mm:ss") );
+            _log.apply(console, args);
+        };
+    }());
 
 
 // 测试网络是否可用
@@ -196,9 +230,10 @@ if( type == 0 ){
                     }, 'json');
 
                 });
-                var checkIndex = 0;
-                checkIndex += prevIndex;
-                prevIndex = 0;
+                if( proxyIndex != startIndex ) {
+                    checkIndex = 0;
+                }
+
                 (function(){
                     var args = arguments, len = data.length;
                     if( checkIndex < len ) {
@@ -241,9 +276,8 @@ if( type == 0 ){
         tempverifyPath = targetPath + 'temp_verify.txt';
     readJson(formalPath, function(formalList){
         readJson(verifyPath, function(verifyList){
-        var checkIndex = 0, readyList = formalList.concat(verifyList), len = readyList.length;
-            checkIndex += prevIndex;
-            prevIndex = 0;
+            var readyList = formalList.concat(verifyList), len = readyList.length;
+
         (function(){
             var args = arguments;
             if( checkIndex < len ) {

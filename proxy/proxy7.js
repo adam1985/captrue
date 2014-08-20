@@ -39,17 +39,6 @@ var getproxy = function( callback ) {
                     proxyList.push( str.substring( 0, str.indexOf('@') ) );
                 });
 
-                if (startIndex === 1) {
-                    createFile('ip.txt', JSON.stringify(proxyList));
-
-                } else {
-                    var proxyIps = fs.readFileSync('ip.txt');
-                    if (proxyIps) {
-                        proxyIps = JSON.parse(proxyIps);
-                        fs.writeFileSync('ip.txt', JSON.stringify(proxyIps.concat(proxyList)));
-                    }
-                }
-
                 totalProxyIps = totalProxyIps.concat(proxyList);
 
                 console.log('正在获取第' + startIndex + '页数据');

@@ -40,7 +40,6 @@ var getproxy = function( callback ) {
                 args.callee();
             });
         } else {
-            createFile('ip.txt', JSON.stringify(proxyList));
             callback && callback(proxyList);
        }
 

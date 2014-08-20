@@ -31,9 +31,6 @@ var getproxy = function( callback ) {
             proxyList = proxyIps;
         }
 
-
-        createFile('ip.txt', JSON.stringify(proxyList));
-
         callback && callback(proxyList);
 
     }).on('error', function(e) {

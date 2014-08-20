@@ -111,7 +111,7 @@ var openBaiduIndex = function( settings ) {
                 page.open(pageCof.url + fileName, function(status) {
 
                     if( status === 'success') {
-                        (function(){
+                        /*(function(){
                             postParam = page.evaluate(function() {
                                 var obj = {};
                                 try{
@@ -125,7 +125,7 @@ var openBaiduIndex = function( settings ) {
                             if( !postParam.res || !postParam.res2 ) {
                                 arguments.callee();
                             }
-                        }());
+                        }());*/
 
 
                         var isResult = page.evaluate(function () {
@@ -147,7 +147,6 @@ var openBaiduIndex = function( settings ) {
                             return  document.querySelectorAll('#userbar').length == 0;
                         });
 
-                        //console.log( isResult );
 
                         if( proxyBlock ) {
                             console.log(JSON.stringify({index : filmIndex, block : true, success : false, msg : 'proxy ip block!!!'}));
@@ -155,16 +154,12 @@ var openBaiduIndex = function( settings ) {
                             page.close();
                             phantom.exit();
                         } else {
-                            if( isResult ) {
-                                // 生成接口文件
-                                captrueInterface( pageCof, function(){
-                                    arg.callee();
-                                }, postParam );
-                            } else {
-                                console.log(JSON.stringify({index : filmIndex, noneres : true, success : false,msg : 'keyword none result!!!'}));
-                                page.close();
-                                phantom.exit();
-                            }
+
+                            console.log(JSON.stringify({index : filmIndex,  success : true ,msg : 'interface suceess capture!'}));
+
+                            page.close();
+                            phantom.exit();
+
                         }
 
                     } else {
@@ -178,7 +173,7 @@ var openBaiduIndex = function( settings ) {
                 });
             } else {
 
-                if( baiduIndexContents.length) {
+                /*if( baiduIndexContents.length) {
                     var resJson = {
                         index : filmIndex,
                         success : true,
@@ -187,8 +182,8 @@ var openBaiduIndex = function( settings ) {
                         msg : interfaceMsgs
                     };
                     console.log(JSON.stringify(resJson));
-                }
-
+                }*/
+                console.log(JSON.stringify({index : filmIndex, success : false, msg : 'interface captrue fail!'}));
                 page.close();
                 phantom.exit();
             }
