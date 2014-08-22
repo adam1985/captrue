@@ -26,7 +26,7 @@ dateFormat.format();
 var initTime = new Date();
 var dateString = initTime.format("yyyyMMddhhmmss");
 
-var proxyIpRange = {start : 1, end : 46},
+var proxyIpRange = {start : 1, end : 55},
     excuteType = arguments[0],
     dirname = arguments[1] || dateString,
     startIndex = arguments[2] || proxyIpRange.start,
@@ -167,6 +167,10 @@ var checkPageCaptrue = function( ip ,success, cb) {
     commandArray.push( '--output-encoding=gbk' );
     commandArray.push( 'checkProxy.js' );
 
+    if( phantom ) {
+        return;
+    }
+
     phantom = spawn('phantomjs', commandArray);
 
     phantom.stdout.on('data', function (data) {
@@ -199,22 +203,27 @@ var checkPageCaptrue = function( ip ,success, cb) {
         console.log( '错误输出流!');
     });
 
-    phantom.on('close', function (code,signal) {
+    /*phantom.on('close', function (code,signal) {
         phantom.kill(signal);
     });
 
     phantom.on('error',function(code,signal){
         phantom.kill(signal);
 
-    });
+    });*/
 
     phantom.on('exit',function(code,signal){
+        phantom.kill(signal);
+        phantom = null;
         cb();
     });
 
 };
 
 if( type == 0 ){
+    if( fs.existsSync(sourcePath)) {
+        fs.unlinkSync(sourcePath);
+    }
 
     (function(){
         var arg = arguments;
