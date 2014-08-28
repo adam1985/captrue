@@ -33,6 +33,16 @@ var startIndex = parseInt(arguments[0]),
     restart = arguments[3],
     mlistIndex = startIndex;
 
+    fileCount = fs.readdirSync(dirPath).length;
+
+    if( fileCount > taskAmount ) {
+        startIndex = -1;
+        restart = null;
+    } else {
+        startIndex = 0;
+        restart = 1;
+    }
+
 //备份
 dateFormat.format();
 var initTime = new Date();
@@ -54,16 +64,30 @@ var appLoger = function( message, data ){
 };
 
 var interfaceMerge = function(){
-    var worker = fork('merge.js', ['success', 'noneres', 'baiduindex'], {silent:true});
-    // 监听子进程exit事件
-    worker.on('exit',function(){
-        appLoger('接口文件合并完成，主进程将退出!');
-        console.log('接口文件合并完成，主进程将退出!');
-    });
+    var fileList = ['success', 'noneres', 'baiduindex'];
+    var isHasFile = ( function(){
+            var _isHasFile = false;
+            fileList.forEach(function(v){
+                if( fs.existsSync(dirPath + v + '.txt') ) {
+                    _isHasFile = true;
+                    return false;
+                }
+            });
+            return _isHasFile;
+    }());
 
-    worker.stdout.on('data', function (stdout) {
-        console.log(stdout.toString());
-    });
+    if( !isHasFile ) {
+        var worker = fork('merge.js', ['success', 'noneres', 'baiduindex'], {silent:true});
+        // 监听子进程exit事件
+        worker.on('exit',function(){
+            appLoger('接口文件合并完成，主进程将退出!');
+            console.log('接口文件合并完成，主进程将退出!');
+        });
+
+        worker.stdout.on('data', function (stdout) {
+            console.log(stdout.toString());
+        });
+    }
 };
 
 //保存被子进程实例数组
@@ -104,6 +128,7 @@ var createWorker = function(appPath){
             if( workerNum == 0 ) {
                 interfaceMerge();
                 appLoger('app主程序已退出!');
+                spawn('forever', ["stop", "app.js"] );
             }
             worker.kill();
         }
@@ -147,11 +172,11 @@ var startWorder = function() {
 };
 
 if( restart ) {
-    getAllFilmList('flimlist.csv', function(data){
+    getAllFilmList('csv/flimlist.csv', function(data){
         var filmType = tools.trim(data[4]);
         return true;
     }, function(mList){
-        mList = mList.slice(0 , 50);
+        //mList = mList.slice(0 , 50);
         console.log('正在分配任务，请稍后...');
         console.log('总共有' + ( mList.length ) + '个影片关键词!');
         var tastSize = parseInt(mList.length / taskAmount),

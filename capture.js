@@ -60,7 +60,7 @@ var captrueInterface = function( config, callback, postParam ) {
                         var isComplete = ( index === len - 1 );
 
                         baiduIndexContents.push(base64.encode(JSON.stringify({
-                            data : contentJson.data,
+                            data : content,
                             face : key
                         })));
                         interfaceList.push(key);
@@ -114,18 +114,6 @@ var openBaiduIndex = function( settings ) {
                 page.open(pageCof.url + fileName, function(status) {
 
                     if( status === 'success') {
-                        (function(){
-                            postParam = page.evaluate(function() {
-                                return {
-                                    res : PPval.ppt,
-                                    res2 : PPval.res2
-                                };
-                            });
-                            if( !postParam.res || !postParam.res2 ) {
-                                arguments.callee();
-                            }
-                        }());
-
 
                         var isResult = page.evaluate(function () {
                             var worlds = ['立即购买', '未被收录'],
@@ -139,7 +127,7 @@ var openBaiduIndex = function( settings ) {
                                 }
                             });
 
-                            return  _isResult && length > 0;
+                            return  _isResult;
                         });
 
                         var proxyBlock =  page.evaluate(function () {
@@ -156,6 +144,18 @@ var openBaiduIndex = function( settings ) {
                         } else {
                             if( isResult ) {
                                 // 生成接口文件
+                                (function(){
+                                    postParam = page.evaluate(function() {
+                                        return {
+                                            res : PPval.ppt,
+                                            res2 : PPval.res2
+                                        };
+                                    });
+                                    if( !postParam.res || !postParam.res2 ) {
+                                        arguments.callee();
+                                    }
+                                }());
+
                                 captrueInterface( pageCof, function(){
                                     arg.callee();
                                 }, postParam );
@@ -202,12 +202,8 @@ openBaiduIndex([
         url : 'http://index.baidu.com/?tpl=crowd&word=',
         index : filmIndex,
         interfaces : [
-            {
-                "Interest" : "Interest/getInterest/"
-            },
-            {
-                "getSocial" : "Social/getSocial/"
-            }
+            {"Interest" : "Interest/getInterest/"},
+            {"getSocial" : "Social/getSocial/"}
         ]
     }
 ]);

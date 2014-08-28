@@ -13,7 +13,9 @@ var sys = require('sys'),
     net = require('net'),
     tools = require('./module/tools'),
     readJson = require('./module/readJson'),
+    Deferred = require( "JQDeferred"),
     phantom;
+
 
 var arguments = process.argv.splice(2);
 
@@ -135,28 +137,40 @@ var sourcePath = targetPath + 'source.txt',
 
 
 // 测试网络是否可用
+var clientTimeOut = 5 * 1000;
 var checkProxyIp = function(ip, success, fail){
         console.log(ip + ':正在检测ip是否连接正常!');
         try{
             var ipArr = ip.split(":");
             var client = net.createConnection(ipArr[1], ipArr[0]);
+
+            client.setTimeout(clientTimeOut, function(){
+                client.destroy();
+            });
+
             client.on('connect', function () {
                 console.log(ip + ':连接正常!');
+                client.destroy();
                 success();
             });
 
             client.on('error', function(e){
                 console.log(ip + ':网络连接异常!');
+                client.destroy();
                 fail();
             });
 
+
+
             client.on('timeout', function(e) {
                 console.log(':网络tcp连接超时!');
+                client.destroy();
                 fail();
             });
 
         } catch (e){
             console.log(ip + ':ip或端口格式不对!!');
+            client.destroy();
             fail();
         }
 };
@@ -221,24 +235,25 @@ var checkPageCaptrue = function( ip ,success, cb) {
 };
 
 if( type == 0 ){
-    if( fs.existsSync(sourcePath)) {
-        fs.unlinkSync(sourcePath);
-    }
 
     (function(){
         var arg = arguments;
         if( proxyIndex <= endIndex ) {
+
+            if( fs.existsSync(sourcePath)) {
+                fs.unlinkSync(sourcePath);
+            }
+
             var proxy = require('./proxy/proxy' + proxyIndex);
             proxy.getproxy( function( data ){
+                var readyList = [];
 
                 data.forEach(function(v){
-                    readJson(sourcePath, function(sourceList){
-                        if( !tools.inArray(sourceList, v, true) ) {
-                            appendFile(sourcePath, JSON.stringify({name : v, type : "unverified"}) + '\r\n');
-                        }
-                    }, 'json');
-
+                    readyList.push(JSON.stringify({name : v, type : "unverified"}) + + '\r\n');
                 });
+
+                appendFile(sourcePath, readyList.join(''));
+
                 if( proxyIndex != startIndex ) {
                     checkIndex = 0;
                 }
@@ -274,6 +289,7 @@ if( type == 0 ){
                         arg.callee();
                     }
                 }());
+
             });
         } else {
             console.log( '获取代理结束' );

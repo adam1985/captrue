@@ -16,7 +16,7 @@ phantom.addCookie({
     'path'  : '/'
 });
 
-var timeout = 30 * 1000, dtimeout = 45 * 1000;
+var timeout = 10 * 1000, dtimeout = 15 * 1000;
 
 page.settings.resourceTimeout = timeout;
 

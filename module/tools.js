@@ -11,7 +11,7 @@
         var name,
             i = 0,
             length = obj.length,
-            isObj = length === undefined || goog.isFunction( obj );
+            isObj = length === undefined;
 
         if ( args ) {
             if ( isObj ) {

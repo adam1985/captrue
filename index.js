@@ -50,7 +50,7 @@ var startIndex = parseInt(arguments[0]),
 
 
 var dirPath = './create/',
-    proxyPath = __dirname + '/ip/',
+    proxyPath = __dirname + '/ip/online/',
     formalPath =  proxyPath + 'formal.txt',
     successProxyPath = proxyPath + 'success.txt',
     failProxyPath = proxyPath + 'fail.txt',
@@ -106,16 +106,23 @@ var phantom,
 if( startIndex == -1 ) {
     var prevIndex = 0;
 
-    var prevLoger = info.getPrevLoger(logerPath);
+    var prevLoger = info.getPrevLoger(logerPath), type = prevLoger.type || 'restart';
 
-    if( prevLoger.endIndex > 0 ) {
-        if( prevLoger.endIndex >= prevLoger.length ){
-            prevIndex = 0;
-            excuteType = 'repair';
-        } else {
-            prevIndex = prevLoger.endIndex;
+    if( type == 'restart' ) {
+        if( prevLoger.endIndex > 0 ) {
+            if( prevLoger.endIndex <  prevLoger.length - 1 ){
+                prevIndex = prevLoger.endIndex + 1;
+            } else {
+                prevIndex = 0;
+                excuteType = 'repair';
+            }
         }
+    } else if ( type == 'repair') {
+        prevIndex = 0;
+        excuteType = 'repair';
     }
+
+    excuteType = type;
     startIndex = prevIndex;
 
 }
@@ -187,6 +194,7 @@ var defaultInfo = {
     startIndex : startIndex,
     endIndex : startIndex,
     excuteNum : 0,
+    type : excuteType,
     startTime : initTime.format("yyyy-MM-dd hh:mm:ss"),
     endTime : initTime.format("yyyy-MM-dd hh:mm:ss"),
     dur : 0,
@@ -207,17 +215,19 @@ var logerState = function( path , name, cb){
         cb && cb(isHasRecode);
     }, 'json');
 
-
 };
 
-info.createLoger( logerPath, defaultInfo, mnameIndex, true );
+if( excuteType != 'repair' ){
+    info.createLoger( logerPath, defaultInfo, mnameIndex, true );
+}
+
 
 console.log('开始抓取数据!');
 
 
 // 生成百度指数数据
 var baiduIndexState = {};
-var createBaiduIndex = function( interfaceContents, mnameIndex, filmname ){
+var createBaiduIndex = function( interfaceContents, mnameIndex, filmname, cb ){
 
     var config = {
         "1" : "19岁及以下",
@@ -232,29 +242,30 @@ var createBaiduIndex = function( interfaceContents, mnameIndex, filmname ){
     };
 
     logerState( successPath, filmname, function(isHasRecode){
-        if( !baiduIndexState[filmname] && data.length >>> 0 ) {
+        if( !baiduIndexState[filmname] ) {
             var getSocial = [], interest = [], filmType = mlist[mnameIndex].type;
 
             interfaceContents.forEach( function(value, key){
-                if( /getSocial/i.test(value.face) ) {
-                    value.data.forEach(function(v){
+                var iContent = JSON.parse(tools.trim(value.data)).data , face = value.face;
+                if( /getSocial/i.test(face) ) {
+                    iContent.forEach(function(v){
                         var mname = v.word;
                         if( typeof v == 'object' ) {
                             tools.each(v, function(key1, val1){
                                 if( typeof val1 == 'object' ){
                                     tools.each( val1, function(key2, val2){
-                                        getSocial.push( [filmType, mname, config[key1], config[key2], val2, val2].join('\t') + '\r\n');
+                                        getSocial.push( [filmType, mname, config[key1], config[key2], val2].join('\t') + '\r\n');
                                     });
                                 }
                             });
                         }
                     });
-                } else if( /interest/i.test(value.face) ) {
-                    tools.each(value.data, function(key, value){
+                } else if( /interest/i.test(face) ) {
+                    tools.each(iContent, function(key, value){
                         var mname = key;
                         tools.each(value, function(i, val){
                             var interestVal = val.split(',');
-                            interest.push( [filmType, mname, "兴趣分布", interestVal.shift(), interestVal.join(','), interestVal.join(',')].join('\t') + '\r\n');
+                            interest.push( [filmType, mname, "兴趣分布", interestVal.shift(), interestVal.join(',')].join('\t') + '\r\n');
                         });
                     });
                 }
@@ -268,13 +279,16 @@ var createBaiduIndex = function( interfaceContents, mnameIndex, filmname ){
                 pathState[baiduindexFile] = 1;
                 createFile(baiduindexFile, result.join(''));
             } else {
-                if( !isHasRecode ) {
+                //if( !isHasRecode ) {
                     fs.appendFileSync(baiduindexFile, result.join(''));
-                }
+                //}
 
             }
 
+
             baiduIndexState[filmname] = 1;
+
+            cb && cb();
         }
     });
 
@@ -362,7 +376,13 @@ var captureLoger = function( data, path, isSuccess, cb){
             nowSec = now.getTime(),
             dur = nowSec - initSec;
 
-        defaultInfo.endIndex = mnameIndex + 1;
+        if( mnameIndex == len - 1 ) {
+            defaultInfo.type = 'repair';
+        } else {
+            defaultInfo.type = excuteType;
+        }
+
+        defaultInfo.endIndex = mnameIndex;
         defaultInfo.excuteNum = mnameIndex - defaultInfo.startIndex;
         defaultInfo.length = len;
         defaultInfo.endTime = now.format("yyyy-MM-dd hh:mm:ss");
@@ -466,15 +486,14 @@ var stdoutLoger = function( path, msg, successState, success, cb ){
             success : success
         }, path, success, cb );
     } else {
-        if( captureState[mnameIndex] < excuteSize ){
-            usedIpIndex++;
-        } else {
+        if( captureState[mnameIndex] >= excuteSize ){
             captureLoger({
                 index : mnameIndex,
                 name : mname,
                 success : success
             }, path);
         }
+        usedIpIndex++;
     }
 
 
@@ -574,12 +593,12 @@ var excuteExec = function(){
 
                                 //console.log(stdout);
 
-                                var resultStr = stdout.match(/{(.*?)}/)[0];
+                                var resultStr = stdout.match(/{(.*)}/)[0];
 
-                                console.log(resultStr);
+                                //console.log(tools.trim(resultStr));
 
                                 try{
-                                    result =  JSON.parse( resultStr );
+                                    result =  JSON.parse( tools.trim(resultStr) );
                                 }catch( e ){
 
                                 }
@@ -597,10 +616,12 @@ var excuteExec = function(){
                                         stdoutLoger(successPath, '抓取完成', true, true, function(){
                                             var interfaceContents = [];
                                             baiduindexContents.forEach(function(value){
-                                                interfaceContents.push( JSON.parse(tools.trim(base64.decode(value))));
+                                                interfaceContents.push( JSON.parse( tools.trim(base64.decode(value)) ));
                                             });
-                                            createBaiduIndex(interfaceContents, mnameIndex, mname );
-                                            createProxyLoger(successProxyPath, proxyIp, 'success');
+                                            createBaiduIndex(interfaceContents, mnameIndex, mname, function(){
+                                                createProxyLoger(successProxyPath, proxyIp, 'success');
+                                            } );
+
                                         });
 
                                     } else if( result.success === false ){
