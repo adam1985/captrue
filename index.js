@@ -613,16 +613,15 @@ var excuteExec = function(){
 
                                         baiduindexContents = result.content;
 
-                                        stdoutLoger(successPath, '抓取完成', true, true, function(){
-                                            var interfaceContents = [];
-                                            baiduindexContents.forEach(function(value){
-                                                interfaceContents.push( JSON.parse( tools.trim(base64.decode(value)) ));
-                                            });
-                                            createBaiduIndex(interfaceContents, mnameIndex, mname, function(){
-                                                createProxyLoger(successProxyPath, proxyIp, 'success');
-                                            } );
-
+                                        var interfaceContents = [];
+                                        baiduindexContents.forEach(function(value){
+                                            interfaceContents.push( JSON.parse( tools.trim(base64.decode(value)) ));
                                         });
+                                        createBaiduIndex(interfaceContents, mnameIndex, mname, function(){
+                                            stdoutLoger(successPath, '抓取完成', true, true, function(){});
+                                        });
+
+                                        createProxyLoger(successProxyPath, proxyIp, 'success');
 
                                     } else if( result.success === false ){
 

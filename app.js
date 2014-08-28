@@ -128,6 +128,7 @@ var createWorker = function(appPath){
             if( workerNum == 0 ) {
                 interfaceMerge();
                 appLoger('app主程序已退出!');
+                spawn('tar', ["zcvf"].concat([dirPath + 'success.txt', dirPath + 'noneres.txt',dirPath +  'baiduindex.txt']) );
                 spawn('forever', ["stop", "app.js"] );
             }
             worker.kill();
