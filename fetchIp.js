@@ -28,14 +28,16 @@ dateFormat.format();
 var initTime = new Date();
 var dateString = initTime.format("yyyyMMddhhmmss");
 
-var proxyIpRange = {start : 1, end : 55},
+var proxyIpRange = {start : 1, end : 62},
     excuteType = arguments[0],
     dirname = arguments[1] || dateString,
     startIndex = arguments[2] || proxyIpRange.start,
     endIndex = arguments[3] || proxyIpRange.end,
     prevIndex = 0,
     checkIndex = 0,
-    proxyIndex = 1;
+    proxyIndex = 1,
+    failIndex = 0,
+    maxFailIndex = 50;
 
 var typeState = {
         "0" : "fetch",
@@ -160,8 +162,6 @@ var checkProxyIp = function(ip, success, fail){
                 fail();
             });
 
-
-
             client.on('timeout', function(e) {
                 console.log(':网络tcp连接超时!');
                 client.destroy();
@@ -247,6 +247,7 @@ if( type == 0 ){
             var proxy = require('./proxy/proxy' + proxyIndex);
             proxy.getproxy( function( data ){
                 var readyList = [];
+                failIndex = 0;
 
                 data.forEach(function(v){
                     readyList.push(JSON.stringify({name : v, type : "unverified"}) + + '\r\n');
@@ -261,29 +262,37 @@ if( type == 0 ){
                 (function(){
                     var args = arguments, len = data.length;
                     if( checkIndex < len ) {
-                        var name = data[checkIndex];
-                        fs.writeFileSync(logerPath, JSON.stringify({name : name, proxyIndex : proxyIndex, index : checkIndex, length : len}));
-                        checkProxyIp(name, function(){
-                            readJson(verifyPath, function(verifyList){
-                                if( !tools.inArray(verifyList, name, true) ) {
-                                    appendFile(verifyPath, JSON.stringify({name : name, type : "verified"}) + '\r\n');
-                                }
-                            }, 'json');
-                            checkPageCaptrue(name, function(){
-                                readJson(formalPath, function(formalList){
-                                    if( !tools.inArray(formalList, name, true) ) {
-                                        appendFile(formalPath, JSON.stringify({name : name, type : "success"}) + '\r\n');
+                        if( failIndex > maxFailIndex ) {
+                            proxyIndex++;
+                            arg.callee();
+                        } else {
+                            failIndex++;
+                            var name = data[checkIndex];
+                            fs.writeFileSync(logerPath, JSON.stringify({name : name, proxyIndex : proxyIndex, index : checkIndex, length : len}));
+                            checkProxyIp(name, function(){
+                                readJson(verifyPath, function(verifyList){
+                                    if( !tools.inArray(verifyList, name, true) ) {
+                                        appendFile(verifyPath, JSON.stringify({name : name, type : "verified"}) + '\r\n');
                                     }
                                 }, 'json');
+                                checkPageCaptrue(name, function(){
+                                    readJson(formalPath, function(formalList){
+                                        if( !tools.inArray(formalList, name, true) ) {
+                                            appendFile(formalPath, JSON.stringify({name : name, type : "success"}) + '\r\n');
+                                        }
+                                        failIndex = 0;
+                                    }, 'json');
+                                }, function(){
+                                    checkIndex++;
+                                    args.callee();
+                                });
+
                             }, function(){
                                 checkIndex++;
                                 args.callee();
                             });
+                        }
 
-                        }, function(){
-                            checkIndex++;
-                            args.callee();
-                        });
                     } else {
                         proxyIndex++;
                         arg.callee();
@@ -292,7 +301,9 @@ if( type == 0 ){
 
             });
         } else {
-            console.log( '获取代理结束' );
+            console.log( '获取代理结束，将重新开始抓取代理' );
+            proxyIndex = 1;
+            arg.callee();
         }
     }());
 

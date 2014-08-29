@@ -128,7 +128,7 @@ var createWorker = function(appPath){
             if( workerNum == 0 ) {
                 interfaceMerge();
                 appLoger('app主程序已退出!');
-                spawn('tar', ["zcvf"].concat([dirPath + 'success.txt', dirPath + 'noneres.txt',dirPath +  'baiduindex.txt']) );
+                spawn('tar', ["zcvf", dirPath + "baiduindex.tar.gz", dirPath + 'success.txt', dirPath + 'noneres.txt', dirPath +  'baiduindex.txt']);
                 spawn('forever', ["stop", "app.js"] );
             }
             worker.kill();
@@ -253,7 +253,20 @@ if( restart ) {
     startWorder();
 }
 
+// 启动抓取代理
 
+var startProxyWorker = function() {
+
+    //保存fork返回的进程实例
+    var worker = fork('fetchIp.js', [0, 'online', -1], {silent: true});
+    //监听子进程exit事件
+    worker.on('exit', function () {
+        console.log('代理worker:' + worker.pid + '已经退出!');
+        startProxyWorker();
+    });
+};
+
+startProxyWorker();
 
 
 

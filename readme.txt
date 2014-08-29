@@ -1,5 +1,5 @@
 
-/usr/bin/nohup /usr/local/bin/node fetchIp 0
+/usr/bin/nohup /usr/local/bin/node fetchIp 0 20140828104032 -1
 
 /usr/bin/nohup /usr/local/bin/node app -1 restart 20
 
@@ -10,3 +10,7 @@ cd /root/phantom && forever start -l /root/phantom/log/forever.log -e /root/phan
 
 // 线上环境下
 forever start -l log/forever.log -e log/err.log -w -a app.js 0 restart 20 1
+
+
+
+node fetchIp 0 online -1

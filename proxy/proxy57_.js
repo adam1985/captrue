@@ -1,16 +1,17 @@
 var cheerio = require('cheerio'),
 	fs = require('fs'),
-    ng = require('nodegrass');
-	
-	
-var startIndex = 1, pageSize = 15;
+    ng = require('nodegrass'),
+    tools = require('../module/tools');
+
+
+var startIndex = 1, pageSize = 10;
 var createFile = function( path, content ) {
 	var isexists = fs.existsSync(path);
 	if(isexists) {
 		fs.unlinkSync(path);
 	}
 	fs.writeFileSync(path, content);
-	
+
 };
 
 var getproxy = function( callback ) {
@@ -21,18 +22,23 @@ var getproxy = function( callback ) {
     (function () {
         var args = arguments;
         if (startIndex <= pageSize) {
-            ng.get('http://ip.zdaye.com/?pageid=' + startIndex, function (data) {
+            ng.get('http://www.proxycn.cn/html_proxy/countryDX-' + startIndex + '.html', function (data) {
 
                 $ = cheerio.load(data);
                 var table = $('table[class="ctable"]'),
-                    lineTr = table.find('tr'),
+                    lineTr = $('tr[bgcolor="#fbfbfb"]'),
                     proxyList = [];
 
                 lineTr.each(function (index) {
                     var ceils = $(this).find('td');
-                    if( index > 0 ) {
-                        proxyList.push(ceils.eq(0).text() + ':' + ceils.eq(1).text());
+
+                    var ipText = ceils.eq(1).text();
+
+                    var ip = ipText.match(/\d{1,3}\.?/gim);
+                    if( ip ) {
+                        proxyList.push(tools.trim(ip.join('')) + ':' + tools.trim(ceils.eq(2).text()));
                     }
+
                 });
 
                 totalProxyIps =  totalProxyIps.concat(proxyList);
@@ -55,5 +61,6 @@ var getproxy = function( callback ) {
     }());
 
 };
+
 
 exports.getproxy = getproxy;
