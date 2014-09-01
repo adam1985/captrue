@@ -587,11 +587,13 @@ var excuteExec = function(){
 
                             var stdout = tools.trim( data );
 
+                            console.log(stdout);
+
                             var result;
 
                             if( /{.*}/i.test(stdout)  && /index/i.test(stdout)  && /success/i.test(stdout) && /msg/i.test(stdout)) {
 
-                                //console.log(stdout);
+
 
                                 var resultStr = stdout.match(/{(.*)}/)[0];
 

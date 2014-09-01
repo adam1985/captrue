@@ -249,6 +249,8 @@ if( type == 0 ){
                 var readyList = [];
                 failIndex = 0;
 
+                console.log('代理' + proxyIndex + ':一共抓取了' + data.length);
+
                 data.forEach(function(v){
                     readyList.push(JSON.stringify({name : v, type : "unverified"}) + + '\r\n');
                 });

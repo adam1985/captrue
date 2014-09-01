@@ -20,7 +20,7 @@ var getproxy = function( callback ) {
 
     ng.get('http://www.mesk.cn/ip/foreign/', function (data) {
         $ = cheerio.load(data);
-        var titles = $('.right-list li a'), pageUrls = [];
+        var titles = $('.arclist-li li a.name'), pageUrls = [];
         titles.each(function(){
             pageUrls.push($(this).attr('href'));
         });

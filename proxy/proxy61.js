@@ -19,8 +19,10 @@ var getproxy = function( callback ) {
     var totalProxyIps = [];
 
     ng.get('http://www.mesk.cn/ip/europe/', function (data) {
+
         $ = cheerio.load(data);
-        var titles = $('.right-list li a'), pageUrls = [];
+        var titles = $('.arclist-li li a.name'), pageUrls = [];
+        console.log(titles.length);
         titles.each(function(){
             pageUrls.push($(this).attr('href'));
         });

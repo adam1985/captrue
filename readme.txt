@@ -1,5 +1,6 @@
 
 /usr/bin/nohup /usr/local/bin/node fetchIp 0 20140828104032 -1
+cd /root/phantom && forever start -l /root/phantom/log/ip_forever.log -e /root/phantom/log/ip_err.log -a fetchIp.js 0 201409011523 -1
 
 /usr/bin/nohup /usr/local/bin/node app -1 restart 20
 
